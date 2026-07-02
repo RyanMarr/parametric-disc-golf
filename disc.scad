@@ -50,8 +50,10 @@ bead_angle = 0; // [0:1:90]
 plate_thickness = 2.0; // [1.2:0.05:4]
 // Inner rim wall lean, degrees outward at the bottom
 inner_wall_draft = 2.0; // [0:0.5:10]
-// Fillet where inner wall meets flight plate
+// Fillet where inner wall meets flight plate: spread along the plate underside (mm)
 wall_fillet = 3.0; // [0:0.1:6]
+// How far the same fillet reaches down the inner wall (mm)
+wall_fillet_height = 3.0; // [0:0.1:8]
 
 /* [Weight Estimate] */
 // g/cm^3 — TPU 1.21, PETG 1.27, PLA 1.24, ABS 1.04, PP 0.90
@@ -98,7 +100,8 @@ function disc_profile(
         dm = dome, sr = shoulder_roll,
         nh = nose_height, ns = nose_sharpness, ws = wing_shape,
         land = bottom_land, bd = bead, ba = bead_angle, pt = plate_thickness,
-        draft = inner_wall_draft, fil = wall_fillet, n = curve_steps) =
+        draft = inner_wall_draft, fil = wall_fillet, filh_in = wall_fillet_height,
+        n = curve_steps) =
     let (
         R        = D / 2,
         r_in     = R - RW,                     // inner rim wall radius (at top of wall)
@@ -161,13 +164,21 @@ function disc_profile(
         // the cavity corner by curving DOWN into the wall (adding material),
         // never up into the plate.
         zU   = z_S - pt,
-        filc = max(0, min(fil, zU - (bd > 0 ? 2*bd : 0) - 1, 0.8 * RW)),
-        W  = [r_in, zU - filc],                // top of the straight inner wall
-        q1 = [r_in, zU - 0.45 * filc],         // circular-arc approximation
-        q2 = [r_in - 0.45 * filc, zU],
+        filc = max(0, min(fil, 0.8 * RW)),     // spread along the underside
+        filh = max(0, min(filh_in,             // reach down the wall
+                          zU - (bd > 0 ? 2*bd : 0) - 1)),
+        has_fil = filc > 0.01 || filh > 0.01,
+        // G1 fillet: tangent-matches the drafted wall at W and the underside
+        // launch angle at F. The underside leaves the corner at the same
+        // shoulder-roll angle sa as the plate top, so thickness stays uniform
+        // and the corner flows instead of forcing a right angle.
+        W  = [r_in, zU - filh],                // top of the straight inner wall
+        q1 = [r_in - 0.5*filh*sin(draft), zU - filh + 0.5*filh*cos(draft)],
         F  = [r_in - filc, zU],                // fillet lands on the underside
+        q2 = [F[0] + 0.5*filc*cos(sa), zU - 0.5*filc*sin(sa)],
         C  = [0, H - pt],
-        f1 = [0.85 * (r_in - filc), zU],       // horizontal start: mirrors plate top
+        f1m = 0.15 * (r_in - filc),            // sa=0 reduces to the old horizontal start
+        f1 = [F[0] - f1m*cos(sa), min(zU + f1m*sin(sa), H - pt)],
         f2 = [flat * r_in, H - pt]
     )
     concat(
@@ -176,8 +187,8 @@ function disc_profile(
         bezpts_tail(N, w1, w2, B1, n),         // wing underside
         bead_pts,                              // land inner edge / bead lobe
         [W],                                   // inner rim wall
-        filc > 0.01 ? bezpts_tail(W, q1, q2, F, 12) : [],  // corner fillet
-        bezpts_tail(filc > 0.01 ? F : W, f1, f2, C, n)     // flight plate underside
+        has_fil ? bezpts_tail(W, q1, q2, F, 12) : [],      // corner fillet
+        bezpts_tail(has_fil ? F : W, f1, f2, C, n)         // flight plate underside
     );                                         // polygon closes C -> T along the axis
 
 // ---------------- Weight estimate (Pappus) ----------------

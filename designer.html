@@ -11,23 +11,36 @@
     --warn: #f0c674; --line: #313847;
   }
   * { box-sizing: border-box; }
+  html, body { height: 100%; }
   body { margin: 0; background: var(--bg); color: var(--ink);
+         display: flex; flex-direction: column;
          font: 14px/1.45 -apple-system, "Segoe UI", Roboto, Helvetica, sans-serif; }
+  header { flex: 0 0 auto; }
   header { padding: 14px 20px 10px; border-bottom: 1px solid var(--line);
            display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: baseline; }
   header h1 { font-size: 18px; margin: 0; font-weight: 650; }
   header .sub { color: var(--muted); font-size: 12.5px; }
-  .wrap { display: grid; grid-template-columns: 340px 1fr; gap: 0; min-height: calc(100vh - 55px); }
-  @media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } }
+  .wrap { flex: 1 1 auto; min-height: 0;
+          display: grid; grid-template-columns: 340px 1fr; gap: 0; }
   .controls { background: var(--panel); border-right: 1px solid var(--line);
-              padding: 14px 16px 40px; overflow-y: auto; max-height: calc(100vh - 55px); }
-  .stage { padding: 16px 20px 40px; display: flex; flex-direction: column; gap: 14px; }
+              padding: 14px 16px 40px; overflow-y: auto; }
+  .stage { padding: 16px 20px 40px; display: flex; flex-direction: column; gap: 14px;
+           overflow-y: auto; min-height: 0; }
+  @media (max-width: 900px) {
+    html, body { height: auto; } body { display: block; }
+    .wrap { display: block; }
+    .controls, .stage { overflow-y: visible; }
+  }
   fieldset { border: 1px solid var(--line); border-radius: 8px; margin: 0 0 14px;
              padding: 10px 12px 12px; }
   legend { color: var(--accent); font-size: 12px; font-weight: 600; padding: 0 6px;
            text-transform: uppercase; letter-spacing: .06em; }
-  .row { display: grid; grid-template-columns: 1fr 84px; gap: 8px; align-items: center;
+  .row { display: grid; grid-template-columns: 1fr 74px 22px; gap: 7px; align-items: center;
          margin: 7px 0; }
+  .row button.reset { padding: 2px 0; width: 22px; font-size: 13px; line-height: 1.4;
+         color: var(--accent); background: none; border: 1px solid transparent; border-radius: 5px; }
+  .row button.reset:hover { border-color: var(--line); background: var(--panel2); }
+  .row button.reset.dim { color: #3d4452; pointer-events: none; }
   .row label { display: block; font-size: 12.5px; color: var(--ink); }
   .row label small { display: block; color: var(--muted); font-size: 11px; }
   .row input[type=range] { width: 100%; accent-color: var(--accent); margin: 2px 0 0; }
@@ -135,7 +148,7 @@
         <span class="hint" id="flightOfficial"></span>
       </div>
       <div class="hint">Speed tracks rim width; glide tracks dome height; turn &amp; fade lean on nose height
-        (a parting-line-height proxy) and dome. Fit to the 27 presets — treat as a starting point, not gospel.</div>
+        (a parting-line-height proxy) and dome. Fit to the 28 presets — treat as a starting point, not gospel.</div>
     </div>
 
     <div class="checks">
@@ -200,7 +213,7 @@ function P(name,brand,cat,dims,maxW,flight,s,note){
          dm:s.dm, sr:(s.sr===undefined?0.35:s.sr),
          nh:s.nh, ns:s.ns, ws:s.ws, bl:s.bl, bd:s.bd,
          ba:(s.ba===undefined?0:s.ba), pt:s.pt,
-         dr:2, wf:3 } };
+         dr:2, wf:3, wh:3 } };
 }
 
 // ================= Parameters =================
@@ -221,7 +234,8 @@ const SHAPE_FIELDS = [
  ["ba","Bead angle","0 = straight down … 90 = inward from the wall (°)",0,90,1],
  ["pt","Plate thickness","flight plate at center (mm)",1.2,4,.05],
  ["dr","Wall draft","inner rim wall lean (°)",0,10,.5],
- ["wf","Wall fillet","inner wall → plate blend (mm)",0,6,.1],
+ ["wf","Wall fillet","corner blend: spread along the plate underside (mm)",0,6,.1],
+ ["wh","Wall fillet height","corner blend: reach down the inner wall (mm)",0,8,.1],
 ];
 const state = Object.assign({}, PRESETS[22].p, { den:1.21, mat:"1.21", pr:22 });
 
@@ -285,22 +299,29 @@ function discProfile(p, n=48){
       beadPts.push([Cx+rb*Math.cos(th), Cz+rb*Math.sin(th)]); }
   }
   // plate underside: meets the shoulder at zU = z_S - pt (full plate thickness
-  // preserved); wall fillet rounds the cavity corner downward into the wall
+  // preserved); wall fillet rounds the cavity corner downward into the wall —
+  // wf = spread along the underside, wh = reach down the wall
   const zU=z_S-p.pt;
-  const filc=Math.max(0, Math.min(p.wf, zU-(p.bd>0?2*p.bd:0)-1, 0.8*RW));
-  const W=[r_in, zU-filc];
-  const q1=[r_in, zU-0.45*filc], q2=[r_in-0.45*filc, zU];
+  const filc=Math.max(0, Math.min(p.wf, 0.8*RW));
+  const filh=Math.max(0, Math.min(p.wh===undefined?p.wf:p.wh, zU-(p.bd>0?2*p.bd:0)-1));
+  const hasFil=filc>0.01||filh>0.01;
+  // G1 fillet: tangent-matches the drafted wall at W and the underside launch
+  // angle (shoulder-roll angle sa, mirroring the plate top) at F
+  const W=[r_in, zU-filh];
+  const q1=[r_in-0.5*filh*Math.sin(rad(p.dr)), zU-filh+0.5*filh*Math.cos(rad(p.dr))];
   const F=[r_in-filc, zU];
+  const q2=[F[0]+0.5*filc*Math.cos(sa), zU-0.5*filc*Math.sin(sa)];
   const C=[0,H-p.pt];
-  const f1=[0.85*(r_in-filc), zU];
+  const f1m=0.15*(r_in-filc);
+  const f1=[F[0]-f1m*Math.cos(sa), Math.min(zU+f1m*Math.sin(sa), H-p.pt)];
   const f2=[flat*r_in, H-p.pt];
   return [].concat(
     bezpts(T,t1,t2,S,n,false),
     bezpts(S,sh1,sh2,N,n,true),
     bezpts(N,w1,w2,B1,n,true),
     beadPts, [W],
-    filc>0.01 ? bezpts(W,q1,q2,F,12,true) : [],
-    bezpts(filc>0.01?F:W, f1,f2,C,n,true)
+    hasFil ? bezpts(W,q1,q2,F,12,true) : [],
+    bezpts(hasFil?F:W, f1,f2,C,n,true)
   );
 }
 // ---- Flight number estimate ----
@@ -337,11 +358,26 @@ function slider(container,[k,label,hint,min,max,step]){
   const row=document.createElement("div"); row.className="row";
   row.innerHTML=`<label>${label} <small>${hint}</small>
     <input type="range" id="r_${k}" min="${min}" max="${max}" step="${step}"></label>
-    <input type="number" id="n_${k}" min="${min}" max="${max}" step="${step}">`;
+    <input type="number" id="n_${k}" min="${min}" max="${max}" step="${step}">
+    <button class="reset" id="x_${k}" title="Reset to the selected preset's value">↺</button>`;
   container.appendChild(row);
   const r=row.querySelector(`#r_${k}`), n=row.querySelector(`#n_${k}`);
   r.addEventListener("input",()=>{ state[k]=+r.value; n.value=r.value; update(); });
   n.addEventListener("input",()=>{ if(n.value==="")return; state[k]=+n.value; r.value=n.value; update(); });
+  row.querySelector(`#x_${k}`).addEventListener("click",()=>{
+    const pre=PRESETS[state.pr];
+    if(!pre || pre.p[k]===undefined) return;
+    state[k]=pre.p[k]; r.value=pre.p[k]; n.value=pre.p[k]; update();
+  });
+}
+// dim each reset button when the value already matches the preset
+function syncResetButtons(){
+  const pre=PRESETS[state.pr];
+  [...PDGA_FIELDS,...SHAPE_FIELDS].forEach(([k])=>{
+    const b=$(`x_${k}`); if(!b) return;
+    const active=pre && Math.abs(pre.p[k]-state[k])>1e-9;
+    b.classList.toggle("dim",!active);
+  });
 }
 const $=id=>document.getElementById(id);
 PDGA_FIELDS.forEach(f=>slider($("pdgaSliders"),f));
@@ -506,6 +542,7 @@ function update(){
 
   $("scadOut").value=scadSnippet(w,vol);
   writeUrl();
+  syncResetButtons();
 }
 function presetMatches(){
   const pre=PRESETS[state.pr];
@@ -539,11 +576,12 @@ bead_angle      = ${state.ba};
 plate_thickness = ${state.pt};
 inner_wall_draft= ${state.dr};
 wall_fillet     = ${state.wf};
+wall_fillet_height = ${state.wh};
 density         = ${state.den};`;
 }
 
 // ================= URL state =================
-const KEYS=["d","h","rd","rw","dm","sr","nh","ns","ws","bl","bd","ba","pt","dr","wf","den","pr"];
+const KEYS=["d","h","rd","rw","dm","sr","nh","ns","ws","bl","bd","ba","pt","dr","wf","wh","den","pr"];
 let urlTimer=null;
 function writeUrl(){
   clearTimeout(urlTimer);
@@ -580,7 +618,8 @@ $("dlJson").addEventListener("click",()=>{
   const set={};
   const map={d:"diameter",h:"height",rd:"rim_depth",rw:"rim_width",dm:"dome",sr:"shoulder_roll",
              nh:"nose_height",ns:"nose_sharpness",ws:"wing_shape",bl:"bottom_land",bd:"bead",
-             ba:"bead_angle",pt:"plate_thickness",dr:"inner_wall_draft",wf:"wall_fillet",den:"density"};
+             ba:"bead_angle",pt:"plate_thickness",dr:"inner_wall_draft",wf:"wall_fillet",
+             wh:"wall_fillet_height",den:"density"};
   Object.entries(map).forEach(([k,scad])=>set[scad]=String(state[k]));
   const blob=new Blob([JSON.stringify({fileFormatVersion:"1",parameterSets:{[name]:set}},null,2)],
                       {type:"application/json"});

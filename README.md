@@ -54,7 +54,8 @@ The four **PDGA measurements** come straight off any disc's certification page a
 - `bottom_land` — width of the flat band the disc rests on.
 - `bead` — bead size in mm (0 = beadless). A circular lobe at the rim's bottom-inside corner, always tangent to the resting plane (the bead ring is what the disc rests on; with a bead the land floats above it). Micro bead ≈ 0.4, classic (Wizard/Judge) ≈ 0.8–1, big bead ≈ 1.5.
 - `bead_angle` (0–90°) — the direction the bead protrudes: **0° = straight down** from the rim bottom at the wall line (how most beaded putters look — default), 45° ≈ the diagonal lobe in Innova's patent cross-section (US5531624 fig. 17), 90° = inward from the wall.
-- `plate_thickness`, `inner_wall_draft`, `wall_fillet` — flight plate and inner rim details.
+- `plate_thickness`, `inner_wall_draft` — flight plate and inner rim details.
+- `wall_fillet` / `wall_fillet_height` — the blend where the inner rim wall meets the flight plate underside: `wall_fillet` is how far it spreads inward along the plate, `wall_fillet_height` how far it reaches down the wall. The fillet is tangent-matched to both surfaces (it follows the wall's draft angle and the underside's launch angle), so it flows instead of forcing a right angle.
 - `label_text` — optional text engraved into the **underside** of the flight plate, centered (mirrored so it reads correctly when you flip the disc over; `label_size`/`label_depth` to taste).
 
 ## Famous mold presets (PDGA-verified, July 2026)
