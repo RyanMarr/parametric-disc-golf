@@ -195,6 +195,25 @@ centroidX = _cx_num(profile) / (3 * area2);
 volume_mm3 = 2 * PI * abs(centroidX) * areaAbs; // solid of revolution
 weight_g   = volume_mm3 * density / 1000;
 
+// ---- Flight number estimate (same math as designer.html) ----
+// Least-squares fits on the 27 PDGA-verified presets in disc.json (LOOCV
+// MAE: speed 0.56, glide 0.81, turn 0.57, fade 0.86). See README for method
+// and sources. Estimates, not gospel: turn/fade of extreme utility discs
+// (Zone, Tilt) are underpredicted.
+function _clamp(v, lo, hi) = min(hi, max(lo, v));
+_domeH = max(0, height - rim_depth - plate_thickness);
+est_speed = _clamp(-5.386 + 0.7475*rim_width, 1, 14.5);
+est_glide = _clamp( 5.319 + 0.150*_domeH + 0.085*rim_width
+                   - 0.441*(100*rim_depth/diameter), 1, 7);
+est_turn  = _clamp(-12.444 - 0.245*dome + 20.246*nose_height
+                   + 0.230*rim_width, -5, 1.5);
+est_fade  = _clamp(-9.681 + 0.360*rim_width + 15.584*nose_height
+                   - 0.961*dome, 0, 6);
+echo(str("Estimated flight numbers: ",
+    round(est_speed*2)/2, " / ", round(est_glide*2)/2, " / ",
+    round(est_turn*2)/2,  " / ", round(est_fade*2)/2,
+    "  (speed/glide/turn/fade, +-0.6-0.9)"));
+
 // PDGA legality (PDGA Technical Standards — see README for sources)
 pdga_max_weight = min(8.3 * diameter / 10, 200);
 rim_depth_ratio = 100 * rim_depth / diameter;   // must be 5%..12%

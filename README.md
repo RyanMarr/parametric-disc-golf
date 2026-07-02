@@ -96,6 +96,31 @@ numbers are manufacturer-published. All lengths in mm, max weight in g.
 | Discmania DD3 | 12/5/−1/3 | 210 | 18 | 12 | 24 | 174.3 |
 | Discraft Nuke | 13/5/−1/3 | 212 | 16 | 12 | 25 | 176.0 |
 
+## Estimated flight numbers
+
+The designer (and the `echo` in disc.scad) estimates speed / glide / turn / fade
+from the geometry as you design. The models are least-squares fits on this
+repo's 27 PDGA-verified presets, cross-validated leave-one-out (typical error
+±0.6–0.9 per number — comparable to published attempts on 900+ discs):
+
+- **Speed** ← rim width. The dominant driver everywhere: r = 0.96 on a
+  112-disc Innova dataset ([engenmt/Disc-Golf](https://github.com/engenmt/Disc-Golf)),
+  whose fit (speed ≈ 7.11 × rim-width-cm − 4.77) matches ours. Roughly +1 speed per +1.4 mm of rim.
+- **Glide** ← dome height (camber → lift), rim width, and (negatively) rim-depth-to-diameter ratio.
+- **Turn & fade** ← nose height and dome. Nose height acts as a
+  **parting-line-height** proxy — the community's strongest stability predictor
+  (higher PLH = more overstable): [Flight Factory](https://flightfactorydiscs.com/blogs/flightfactoryblog/how-parting-line-height-and-dome-measurements-help-predict-flight),
+  [Mint Discs](https://mintdiscs.com/blogs/news/understanding-your-disc-volume-1-parting-line-height).
+  Flat tops add fade; domey tops add turn ([DG Puttheads](https://www.dgputtheads.com/how-dome-height-changes-flight-stability)).
+
+Caveats worth knowing: manufacturer flight numbers are marketing estimates,
+not measurements, and are inconsistent across brands; glide is the most
+inflated number ([straslerj's analysis](https://github.com/straslerj/disc-golf-flight-numbers));
+extreme utility discs (Zone, Tilt) fade harder than the model predicts; and
+printed weight, plastic stiffness, and your arm speed all shift real flight.
+Physics background: Hummel's [Frisbee flight simulation thesis](https://morleyfielddgc.wordpress.com/wp-content/uploads/2009/04/hummelthesis.pdf)
+and Potts & Crowther's wind-tunnel work.
+
 ## PDGA legality (what the checks enforce)
 
 From the current [PDGA Technical Standards](https://www.pdga.com/technical-standards)

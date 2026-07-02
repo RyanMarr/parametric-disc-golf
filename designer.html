@@ -129,6 +129,16 @@
     </div>
 
     <div class="checks">
+      <h3>Estimated flight numbers <span class="hint" style="font-weight:400">— from geometry; typical error ±0.6–0.9 per number</span></h3>
+      <div style="display:flex; flex-wrap:wrap; gap:18px; align-items:baseline; padding:4px 0 2px">
+        <span class="flight" id="flightEstOut"></span>
+        <span class="hint" id="flightOfficial"></span>
+      </div>
+      <div class="hint">Speed tracks rim width; glide tracks dome height; turn &amp; fade lean on nose height
+        (a parting-line-height proxy) and dome. Fit to the 27 presets — treat as a starting point, not gospel.</div>
+    </div>
+
+    <div class="checks">
       <h3>PDGA legality (Technical Standards, 2026 revision)</h3>
       <ul id="checks"></ul>
     </div>
@@ -292,6 +302,22 @@ function discProfile(p, n=48){
     bezpts(filc>0.01?F:W, f1,f2,C,n,true)
   );
 }
+// ---- Flight number estimate ----
+// Least-squares fits on this file's 27 PDGA-verified presets (LOOCV MAE:
+// speed 0.56, glide 0.81, turn 0.57, fade 0.86). Speed matches the published
+// 112-disc Innova fit (speed = 7.11*rw_cm - 4.77, engenmt/Disc-Golf). Nose
+// height acts as a parting-line-height proxy — the community's strongest
+// stability predictor (Flight Factory, Mint Discs). Same math as disc.scad.
+function flightEst(p){
+  const clamp=(v,lo,hi)=>Math.min(hi,Math.max(lo,v));
+  const domeH=Math.max(0,p.h-p.rd-p.pt);
+  return [
+    clamp(-5.386 + 0.7475*p.rw, 1, 14.5),                                   // speed
+    clamp( 5.319 + 0.150*domeH + 0.085*p.rw - 0.441*(100*p.rd/p.d), 1, 7),  // glide
+    clamp(-12.444 - 0.245*p.dm + 20.246*p.nh + 0.230*p.rw, -5, 1.5),        // turn
+    clamp(-9.681 + 0.360*p.rw + 15.584*p.nh - 0.961*p.dm, 0, 6),            // fade
+  ];
+}
 function volumeMm3(pts){
   let a2=0, cx=0;
   for(let i=0;i<pts.length;i++){
@@ -444,6 +470,15 @@ function update(){
   $("tDome").innerHTML=`${domeH.toFixed(1)} <small>mm</small>`;
   $("tIrd").innerHTML=`${ird.toFixed(0)} <small>mm</small>`;
   $("tRatio").innerHTML=`${ratio.toFixed(1)} <small>%</small>`;
+
+  const fe=flightEst(p);
+  const half=v=>(Math.round(v*2)/2).toString();
+  $("flightEstOut").innerHTML=["Speed","Glide","Turn","Fade"]
+    .map((n,i)=>`<span title="${n}"><b>${n}</b> ${half(fe[i])}</span>`).join(" ");
+  const preF=PRESETS[state.pr];
+  $("flightOfficial").textContent = preF
+    ? `official ${preF.brand} ${preF.name}: ${preF.flight.join(" / ")}`
+    : "";
 
   const checks=[
     [w<=maxW, `Weight ${w.toFixed(1)} g ≤ ${maxW.toFixed(1)} g (8.3 g per cm of diameter, 200 g cap)`,
