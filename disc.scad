@@ -120,32 +120,41 @@ function disc_profile(
         shoff = _lerp(0.30, 0.55, 1 - ns) * RW,
         sh1 = [r_in + shoff * cos(sa), z_S - shoff * sin(sa)],  // same tangent as t2
         sh2 = [R, z_nose + nose_r],            // vertical arrival just above nose
-        // --- wing underside: nose (R, z_nose) -> land edge (land_out, 0) ---
+        // --- wing underside: nose (R, z_nose) -> land edge ---
+        // With a bead, the land floats `lift` above the resting plane: the
+        // bead ring hangs below the surrounding rim bottom and is what the
+        // disc actually rests on (z=0 stays the resting plane).
         r_wall_b = r_in + tan(draft) * RD,     // wall radius at the bottom (drafted)
         land_out = r_wall_b + land,
-        B1 = [land_out, 0],
+        lift = bd > 0 ? 0.4 * bd : 0,
+        B1 = [land_out, lift],
         s1 = _lerp2(N, B1, 1/3),               // straight-chord controls
         s2 = _lerp2(N, B1, 2/3),
         v1 = [R, z_nose * (1 - _lerp(0.35, 0.65, 1 - ns))],  // convex (blunt) controls
-        v2 = [land_out + 0.6 * (R - land_out), 0],
+        v2 = [land_out + 0.6 * (R - land_out), lift],
         w1 = _lerp2(s1, ws >= 0 ? v1 : [2*s1[0] - v1[0], 2*s1[1] - v1[1]], abs(ws)),
         w2 = _lerp2(s2, ws >= 0 ? v2 : [2*s2[0] - v2[0], 2*s2[1] - v2[1]], abs(ws)),
         // --- bottom land, bead, inner rim wall ---
         // Bead (per Innova patent US5531624 fig. 17): a rounded lobe hanging
-        // at the foot of the inner wall, protruding down-and-inward. Its
-        // underside is tangent to the resting plane (the bead is the contact
-        // ring), the innermost apex sits LOW (z = 0.8*bd), and the top swells
-        // smoothly back into the wall — not a bump on the wall side.
+        // at the foot of the inner wall, protruding below the lifted land AND
+        // inward past the wall. From the land: a shallow cove drops to the
+        // grounded bead bottom (tangent to z=0), rounds up-inward to a LOW
+        // apex (z = 0.8*bd), then swells smoothly back into the wall.
+        co = min(bd, 0.8 * land),              // cove width (stay on the land)
         bead_pts = bd > 0
             ? concat(
-                bezpts([r_wall_b + 0.2*bd, 0],         // grounded foot
-                       [r_wall_b - 0.5*bd, 0],
+                bezpts([r_wall_b + co, lift],          // cove: land -> bead bottom
+                       [r_wall_b + 0.5*co, lift],
+                       [r_wall_b + 0.15*co, 0],
+                       [r_wall_b - 0.35*bd, 0], 8),
+                bezpts_tail([r_wall_b - 0.35*bd, 0],   // grounded foot -> apex
+                       [r_wall_b - 0.75*bd, 0],
                        [r_wall_b - bd, 0.35*bd],
-                       [r_wall_b - bd, 0.8*bd], 10),   // apex: down-and-in
-                bezpts_tail([r_wall_b - bd, 0.8*bd],
+                       [r_wall_b - bd, 0.8*bd], 8),
+                bezpts_tail([r_wall_b - bd, 0.8*bd],   // ogee into the wall
                        [r_wall_b - bd, 1.5*bd],
                        [r_wall_b, 2.0*bd],
-                       [r_wall_b, 2.4*bd], 10))        // swell into the wall
+                       [r_wall_b, 2.4*bd], 8))
             : [[r_wall_b, 0]],
         // --- flight plate underside ---
         // The underside meets the shoulder at zU = z_S - pt, so the plate

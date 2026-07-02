@@ -243,21 +243,25 @@ function discProfile(p, n=48){
   const shoff=lerp(0.30,0.55,1-p.ns)*RW;
   const sh1=[r_in+shoff*Math.cos(sa), z_S-shoff*Math.sin(sa)];
   const sh2=[R, z_nose+nose_r];
-  // wing underside
+  // wing underside; with a bead the land floats `lift` above the resting
+  // plane — the bead ring hangs below it and is the actual contact ring
   const r_wall_b=r_in+Math.tan(rad(p.dr))*RD;
   const land_out=r_wall_b+p.bl;
-  const B1=[land_out,0];
+  const lift=p.bd>0 ? 0.4*p.bd : 0;
+  const B1=[land_out,lift];
   const s1=lerp2(N,B1,1/3), s2=lerp2(N,B1,2/3);
   const v1=[R, z_nose*(1-lerp(0.35,0.65,1-p.ns))];
-  const v2=[land_out+0.6*(R-land_out), 0];
+  const v2=[land_out+0.6*(R-land_out), lift];
   const w1=lerp2(s1, p.ws>=0?v1:[2*s1[0]-v1[0],2*s1[1]-v1[1]], Math.abs(p.ws));
   const w2=lerp2(s2, p.ws>=0?v2:[2*s2[0]-v2[0],2*s2[1]-v2[1]], Math.abs(p.ws));
   // bead / land / wall
-  // bead (Innova patent US5531624 fig.17): lobe at the foot of the inner wall,
-  // protruding down-and-inward, underside tangent to the resting plane
-  const bd=p.bd, beadPts = bd>0
-    ? bezpts([r_wall_b+0.2*bd,0],[r_wall_b-0.5*bd,0],[r_wall_b-bd,0.35*bd],[r_wall_b-bd,0.8*bd],10,false)
-      .concat(bezpts([r_wall_b-bd,0.8*bd],[r_wall_b-bd,1.5*bd],[r_wall_b,2.0*bd],[r_wall_b,2.4*bd],10,true))
+  // bead (Innova patent US5531624 fig.17): lobe hanging below the lifted land
+  // and inward past the wall; grounded on z=0, low apex, ogee into the wall
+  const bd=p.bd, co=Math.min(bd,0.8*p.bl);
+  const beadPts = bd>0
+    ? bezpts([r_wall_b+co,lift],[r_wall_b+0.5*co,lift],[r_wall_b+0.15*co,0],[r_wall_b-0.35*bd,0],8,false)
+      .concat(bezpts([r_wall_b-0.35*bd,0],[r_wall_b-0.75*bd,0],[r_wall_b-bd,0.35*bd],[r_wall_b-bd,0.8*bd],8,true))
+      .concat(bezpts([r_wall_b-bd,0.8*bd],[r_wall_b-bd,1.5*bd],[r_wall_b,2.0*bd],[r_wall_b,2.4*bd],8,true))
     : [[r_wall_b,0]];
   // plate underside: meets the shoulder at zU = z_S - pt (full plate thickness
   // preserved); wall fillet rounds the cavity corner downward into the wall
