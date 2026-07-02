@@ -1,0 +1,6 @@
+# slicer / CAD exports
+*.stl
+*.3mf
+*.gcode
+*.echo
+.DS_Store
