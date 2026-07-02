@@ -15,7 +15,7 @@ silhouette, and print your own prototypes.
 |---|---|
 | `disc.scad` | The parametric model. Open in OpenSCAD, tweak via **Window → Customizer**, export STL. |
 | `disc.json` | Customizer preset sets for all 27 famous molds — loads automatically next to `disc.scad` (pick a preset from the Customizer dropdown). |
-| `designer.html` | Interactive designer: live cross-section preview, weight estimate, PDGA legality checks, shareable URLs. Just double-click it (no server needed). |
+| `designer.html` | Interactive designer: live cross-section preview, weight estimate, PDGA legality checks, shareable URLs. **[Use it online](https://ryanmarr.github.io/parametric-disc-golf/designer.html)** or just double-click the file (no server needed). |
 
 ## Quick start
 
