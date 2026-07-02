@@ -250,18 +250,24 @@ function discProfile(p, n=48){
   const beadPts=[];
   if(p.bd>0){ for(let a=270;a>=90;a-=15) beadPts.push([r_wall_b+p.bd*Math.cos(rad(a)), p.bd+p.bd*Math.sin(rad(a))]); }
   else beadPts.push([r_wall_b,0]);
-  const W=[r_in,RD];
   const wall_lo = p.bd>0 ? [r_wall_b,2*p.bd] : [r_wall_b,0];
-  // plate underside: wall -> center
+  // plate underside: meets the shoulder at zU = z_S - pt (full plate thickness
+  // preserved); wall fillet rounds the cavity corner downward into the wall
+  const zU=z_S-p.pt;
+  const filc=Math.max(0, Math.min(p.wf, zU-(p.bd>0?2*p.bd:0)-1, 0.8*RW));
+  const W=[r_in, zU-filc];
+  const q1=[r_in, zU-0.45*filc], q2=[r_in-0.45*filc, zU];
+  const F=[r_in-filc, zU];
   const C=[0,H-p.pt];
-  const f1=[r_in, RD+Math.min(p.wf, Math.max(0.5, H-p.pt-RD))];
+  const f1=[0.85*(r_in-filc), zU];
   const f2=[flat*r_in, H-p.pt];
   return [].concat(
     bezpts(T,t1,t2,S,n,false),
     bezpts(S,sh1,sh2,N,n,true),
     bezpts(N,w1,w2,B1,n,true),
     beadPts, [wall_lo, W],
-    bezpts(W,f1,f2,C,n,true)
+    filc>0.01 ? bezpts(W,q1,q2,F,12,true) : [],
+    bezpts(filc>0.01?F:W, f1,f2,C,n,true)
   );
 }
 function volumeMm3(pts){

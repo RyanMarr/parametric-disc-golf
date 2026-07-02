@@ -125,11 +125,20 @@ function disc_profile(
             ? [for (a = [270 : -15 : 90])      // semicircular bump into the cavity
                   [r_wall_b + bd * cos(a), bd + bd * sin(a)]]
             : [[r_wall_b, 0]],
-        W  = [r_in, RD],                       // top of inner wall
         wall_lo = bd > 0 ? [r_wall_b, 2 * bd] : [r_wall_b, 0],
-        // --- flight plate underside: wall top -> center (0, H - pt) ---
+        // --- flight plate underside ---
+        // The underside meets the shoulder at zU = z_S - pt, so the plate
+        // keeps ~full thickness all the way out. The wall fillet then rounds
+        // the cavity corner by curving DOWN into the wall (adding material),
+        // never up into the plate.
+        zU   = z_S - pt,
+        filc = max(0, min(fil, zU - (bd > 0 ? 2*bd : 0) - 1, 0.8 * RW)),
+        W  = [r_in, zU - filc],                // top of the straight inner wall
+        q1 = [r_in, zU - 0.45 * filc],         // circular-arc approximation
+        q2 = [r_in - 0.45 * filc, zU],
+        F  = [r_in - filc, zU],                // fillet lands on the underside
         C  = [0, H - pt],
-        f1 = [r_in, RD + min(fil, max(0.5, H - pt - RD))],
+        f1 = [0.85 * (r_in - filc), zU],       // horizontal start: mirrors plate top
         f2 = [flat * r_in, H - pt]
     )
     concat(
@@ -138,7 +147,8 @@ function disc_profile(
         bezpts_tail(N, w1, w2, B1, n),         // wing underside
         bead_pts,                              // land inner edge / bead bump
         [wall_lo, W],                          // inner rim wall
-        bezpts_tail(W, f1, f2, C, n)           // flight plate underside
+        filc > 0.01 ? bezpts_tail(W, q1, q2, F, 12) : [],  // corner fillet
+        bezpts_tail(filc > 0.01 ? F : W, f1, f2, C, n)     // flight plate underside
     );                                         // polygon closes C -> T along the axis
 
 // ---------------- Weight estimate (Pappus) ----------------
