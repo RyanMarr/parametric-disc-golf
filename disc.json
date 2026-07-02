@@ -17,6 +17,7 @@
       "plate_thickness": "3",
       "inner_wall_draft": "2",
       "wall_fillet": "3",
+      "wall_fillet_height": "3",
       "label_text": ""
     },
     "Dynamic Discs Judge  [2|4|0|1]": {
@@ -35,6 +36,7 @@
       "plate_thickness": "3",
       "inner_wall_draft": "2",
       "wall_fillet": "3",
+      "wall_fillet_height": "3",
       "label_text": ""
     },
     "Discmania P2  [2|3|0|1]": {
@@ -53,6 +55,7 @@
       "plate_thickness": "3",
       "inner_wall_draft": "2",
       "wall_fillet": "3",
+      "wall_fillet_height": "3",
       "label_text": ""
     },
     "Discraft Luna  [3|3|0|2]": {
@@ -71,6 +74,7 @@
       "plate_thickness": "3",
       "inner_wall_draft": "2",
       "wall_fillet": "3",
+      "wall_fillet_height": "3",
       "label_text": ""
     },
     "Discraft Zone  [4|3|0|3]": {
@@ -89,6 +93,7 @@
       "plate_thickness": "2.8",
       "inner_wall_draft": "2",
       "wall_fillet": "3",
+      "wall_fillet_height": "3",
       "label_text": ""
     },
     "Axiom Envy  [3|3|-1|2]": {
@@ -107,6 +112,7 @@
       "plate_thickness": "3",
       "inner_wall_draft": "2",
       "wall_fillet": "3",
+      "wall_fillet_height": "3",
       "label_text": ""
     },
     "Gateway Wizard  [2|3|0|2]": {
@@ -125,6 +131,7 @@
       "plate_thickness": "2.6",
       "inner_wall_draft": "2",
       "wall_fillet": "3",
+      "wall_fillet_height": "3",
       "label_text": ""
     },
     "Discraft Buzzz  [5|4|-1|1]": {
@@ -143,6 +150,7 @@
       "plate_thickness": "2.6",
       "inner_wall_draft": "2",
       "wall_fillet": "3",
+      "wall_fillet_height": "3",
       "label_text": ""
     },
     "Innova Roc3  [5|4|0|3]": {
@@ -161,6 +169,7 @@
       "plate_thickness": "2.6",
       "inner_wall_draft": "2",
       "wall_fillet": "3",
+      "wall_fillet_height": "3",
       "label_text": ""
     },
     "Innova Mako3  [5|5|0|0]": {
@@ -179,6 +188,7 @@
       "plate_thickness": "2.6",
       "inner_wall_draft": "2",
       "wall_fillet": "3",
+      "wall_fillet_height": "3",
       "label_text": ""
     },
     "Discmania MD3  [5|5|0|2]": {
@@ -197,6 +207,7 @@
       "plate_thickness": "2.6",
       "inner_wall_draft": "2",
       "wall_fillet": "3",
+      "wall_fillet_height": "3",
       "label_text": ""
     },
     "Axiom Hex  [5|5|-1|1]": {
@@ -215,6 +226,7 @@
       "plate_thickness": "2.2",
       "inner_wall_draft": "2",
       "wall_fillet": "3",
+      "wall_fillet_height": "3",
       "label_text": ""
     },
     "Dynamic Discs EMAC Truth  [5|5|0|2]": {
@@ -233,6 +245,7 @@
       "plate_thickness": "2.4",
       "inner_wall_draft": "2",
       "wall_fillet": "3",
+      "wall_fillet_height": "3",
       "label_text": ""
     },
     "Axiom Paradox  [5|4|-4|0]": {
@@ -251,6 +264,7 @@
       "plate_thickness": "2.4",
       "inner_wall_draft": "2",
       "wall_fillet": "3",
+      "wall_fillet_height": "3",
       "label_text": ""
     },
     "Innova Teebird  [7|5|0|2]": {
@@ -269,6 +283,7 @@
       "plate_thickness": "2.2",
       "inner_wall_draft": "2",
       "wall_fillet": "3",
+      "wall_fillet_height": "3",
       "label_text": ""
     },
     "Innova Leopard  [6|5|-2|1]": {
@@ -287,6 +302,7 @@
       "plate_thickness": "2.2",
       "inner_wall_draft": "2",
       "wall_fillet": "3",
+      "wall_fillet_height": "3",
       "label_text": ""
     },
     "Innova Eagle  [7|4|-1|3]": {
@@ -305,6 +321,7 @@
       "plate_thickness": "2.2",
       "inner_wall_draft": "2",
       "wall_fillet": "3",
+      "wall_fillet_height": "3",
       "label_text": ""
     },
     "Latitude 64 River  [7|7|-1|1]": {
@@ -323,6 +340,7 @@
       "plate_thickness": "2.2",
       "inner_wall_draft": "2",
       "wall_fillet": "3",
+      "wall_fillet_height": "3",
       "label_text": ""
     },
     "Discraft Undertaker  [9|5|-1|2]": {
@@ -341,6 +359,7 @@
       "plate_thickness": "2.2",
       "inner_wall_draft": "2",
       "wall_fillet": "3",
+      "wall_fillet_height": "3",
       "label_text": ""
     },
     "Discmania FD  [7|6|-1|1]": {
@@ -359,6 +378,7 @@
       "plate_thickness": "2.2",
       "inner_wall_draft": "2",
       "wall_fillet": "3",
+      "wall_fillet_height": "3",
       "label_text": ""
     },
     "Innova Roadrunner  [9|5|-4|1]": {
@@ -377,6 +397,7 @@
       "plate_thickness": "2",
       "inner_wall_draft": "2",
       "wall_fillet": "3",
+      "wall_fillet_height": "3",
       "label_text": ""
     },
     "Discmania Tilt  [9|1|1|6]": {
@@ -395,6 +416,7 @@
       "plate_thickness": "2.5",
       "inner_wall_draft": "2",
       "wall_fillet": "3",
+      "wall_fillet_height": "3",
       "label_text": ""
     },
     "Innova Destroyer  [12|5|-1|3]": {
@@ -413,6 +435,7 @@
       "plate_thickness": "2",
       "inner_wall_draft": "2",
       "wall_fillet": "3",
+      "wall_fillet_height": "3",
       "label_text": ""
     },
     "Innova Wraith  [11|5|-1|3]": {
@@ -431,6 +454,7 @@
       "plate_thickness": "2",
       "inner_wall_draft": "2",
       "wall_fillet": "3",
+      "wall_fillet_height": "3",
       "label_text": ""
     },
     "Discraft Zeus  [12|5|-1|3]": {
@@ -449,6 +473,7 @@
       "plate_thickness": "2",
       "inner_wall_draft": "2",
       "wall_fillet": "3",
+      "wall_fillet_height": "3",
       "label_text": ""
     },
     "Innova Shryke  [13|6|-2|2]": {
@@ -467,6 +492,7 @@
       "plate_thickness": "2",
       "inner_wall_draft": "2",
       "wall_fillet": "3",
+      "wall_fillet_height": "3",
       "label_text": ""
     },
     "Discmania DD3  [12|5|-1|3]": {
@@ -485,6 +511,7 @@
       "plate_thickness": "2",
       "inner_wall_draft": "2",
       "wall_fillet": "3",
+      "wall_fillet_height": "3",
       "label_text": ""
     },
     "Discraft Nuke  [13|5|-1|3]": {
@@ -503,6 +530,7 @@
       "plate_thickness": "2",
       "inner_wall_draft": "2",
       "wall_fillet": "3",
+      "wall_fillet_height": "3",
       "label_text": ""
     }
   }
