@@ -1,6 +1,6 @@
-# Parametric Disc Golf Discs
+# Parametric Disc Golf Disc Generator
 
-A parametric OpenSCAD model of a disc golf disc, plus preset numbers for 28 famous
+Design your own disc golf discs. This repo is a parametric OpenSCAD model of a disc golf disc, plus preset numbers for 28 famous
 PDGA-approved molds and a web-based designer. Punch in the four official PDGA
 measurements for any approved disc, tune a handful of shape sliders to match its
 silhouette, and print your own prototypes.
