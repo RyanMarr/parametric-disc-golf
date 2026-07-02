@@ -47,6 +47,7 @@ The four **PDGA measurements** come straight off any disc's certification page a
 **Shape character** sliders control what PDGA numbers can't capture:
 
 - `dome` (0–1) — flat top → very domey. Note: actual dome *height* is `height − rim_depth − plate_thickness`, which falls out of the PDGA numbers; this slider shapes the curve.
+- `shoulder_roll` (0–1) — 0 keeps a flat band on top of the rim (visible crease where the dome meets it); higher values roll the dome continuously over the shoulder toward the nose, like most real molds. No effect on flat-top discs.
 - `nose_height` (0.1–0.7) — where the widest point sits, as a fraction of height. Drivers ≈ 0.3, putters ≈ 0.5.
 - `nose_sharpness` (0–1) — blunt putter nose → sharp driver nose. Roughly the inverse of PDGA's "Rim Configuration" rating (putters 55–70 → ~0.1; drivers 26–30 → ~0.75).
 - `wing_shape` (−1 to +1) — concave driver undercut → straight → convex putter wing.

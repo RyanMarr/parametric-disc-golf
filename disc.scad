@@ -32,6 +32,8 @@ rim_width = 22.0; // [8:0.1:26]
 /* [Shape Character] */
 // 0 = flat top, 1 = very domey
 dome = 0.45; // [0:0.01:1]
+// Rolls the dome smoothly over the shoulder: 0 = flat shoulder band, 1 = continuous rollover into the nose (no effect on flat tops)
+shoulder_roll = 0.35; // [0:0.01:1]
 // Height of the widest point (nose apex) as a fraction of disc height
 nose_height = 0.35; // [0.1:0.01:0.7]
 // 0 = blunt rounded nose (putter), 1 = sharp aerodynamic nose (driver)
@@ -91,7 +93,8 @@ function bezpts_tail(p0, p1, p2, p3, n) = [for (i = [1:n]) bez3(p0, p1, p2, p3, 
 // PDGA numbers themselves. The nose curve then spans only the rim width.
 function disc_profile(
         D = diameter, H = height, RD = rim_depth, RW = rim_width,
-        dm = dome, nh = nose_height, ns = nose_sharpness, ws = wing_shape,
+        dm = dome, sr = shoulder_roll,
+        nh = nose_height, ns = nose_sharpness, ws = wing_shape,
         land = bottom_land, bd = bead, pt = plate_thickness,
         draft = inner_wall_draft, fil = wall_fillet, n = curve_steps) =
     let (
@@ -101,14 +104,21 @@ function disc_profile(
         z_S      = min(RD + pt, H),            // shoulder height (plate top at the rim)
         flat     = _lerp(0.80, 0.30, dm),      // how long the dome stays high
         // --- plate top: center (0,H) -> shoulder (r_in, z_S) ---
+        // shoulder_roll tilts the shared tangent at S downward (angle sa), so
+        // the dome rolls continuously over the shoulder instead of flattening
+        // into a brim (which leaves a visible curvature crease). sa fades out
+        // as the dome height approaches zero: flat tops keep a flat shoulder.
+        sa   = sr * 22 * min(1, (H - z_S) / 2.5),
+        tilt = min(0.15 * r_in * sin(sa), 0.8 * (H - z_S)),
         T  = [0, H],
         S  = [r_in, z_S],
         t1 = [flat * r_in, H],
-        t2 = [0.85 * r_in, z_S],               // horizontal-ish arrival: blends into shoulder
+        t2 = [r_in - 0.15 * r_in * cos(sa), z_S + tilt],
         // --- shoulder -> nose (R, z_nose), spans the rim width ---
         N  = [R, z_nose],
         nose_r = (z_S - z_nose) * _lerp(0.65, 0.12, ns),
-        sh1 = [r_in + _lerp(0.30, 0.55, 1 - ns) * RW, z_S],  // horizontal leaving shoulder
+        shoff = _lerp(0.30, 0.55, 1 - ns) * RW,
+        sh1 = [r_in + shoff * cos(sa), z_S - shoff * sin(sa)],  // same tangent as t2
         sh2 = [R, z_nose + nose_r],            // vertical arrival just above nose
         // --- wing underside: nose (R, z_nose) -> land edge (land_out, 0) ---
         r_wall_b = r_in + tan(draft) * RD,     // wall radius at the bottom (drafted)
