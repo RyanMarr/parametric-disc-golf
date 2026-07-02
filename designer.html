@@ -161,8 +161,8 @@ const PRESETS = [
  P("Luna","Discraft","putter",[211,20,14,11],175.1,[3,3,0,2],{dm:.2,nh:.5,ns:.05,ws:.7,bl:4.5,bd:0,pt:3},"flat top, very blunt nose (McBeth)"),
  P("Zone","Discraft","putter",[211,20,13,12],175.1,[4,3,0,3],{dm:.25,nh:.42,ns:.36,ws:.3,bl:3.5,bd:0,pt:2.8},"low, thick wing, overstable approach"),
  P("Envy","Axiom","putter",[210,18,14,11],174.3,[3,3,-1,2],{dm:.3,nh:.5,ns:.22,ws:.5,bl:4,bd:0,pt:3},"low flat top, overmold-style rim"),
- P("Wizard","Gateway","putter",[210,21,18,10],174.3,[2,3,0,2],{dm:.55,sr:.5,nh:.5,ns:.06,ws:.65,bl:4,bd:1.2,pt:2.6},"big bead, extra-deep dish"),
- P("Buzzz","Discraft","midrange",[217,19,13,12],180.1,[5,4,-1,1],{dm:.2,nh:.45,ns:.4,ws:.35,bl:3.5,bd:.4,pt:2.6},"flat top, small bead — dead straight"),
+ P("Wizard","Gateway","putter",[210,21,18,10],174.3,[2,3,0,2],{dm:.55,sr:.5,nh:.5,ns:.06,ws:.65,bl:4,bd:.9,pt:2.6},"the archetypal beaded putter, extra-deep dish"),
+ P("Buzzz","Discraft","midrange",[217,19,13,12],180.1,[5,4,-1,1],{dm:.2,nh:.45,ns:.4,ws:.35,bl:3.5,bd:0,pt:2.6},"flat top, beadless (a Wasp minus the bead) — dead straight"),
  P("Roc3","Innova","midrange",[218,20,13,14],180.9,[5,4,0,3],{dm:.15,nh:.45,ns:.42,ws:.35,bl:3.5,bd:.6,pt:2.6},"puddle-top Roc, beaded blunt rim"),
  P("Mako3","Innova","midrange",[217,19,14,14],180.1,[5,5,0,0],{dm:.6,sr:.5,nh:.45,ns:.21,ws:.5,bl:3.5,bd:0,pt:2.6},"smooth dome, rounded beadless rim"),
  P("MD3","Discmania","midrange",[218,19,13,14],180.9,[5,5,0,2],{dm:.3,nh:.45,ns:.39,ws:.35,bl:3.5,bd:.5,pt:2.6},"moderately flat, Roc-like beaded rim"),
@@ -205,7 +205,7 @@ const SHAPE_FIELDS = [
  ["ns","Nose sharpness","0 = blunt putter … 1 = sharp driver",0,1,.01],
  ["ws","Wing shape","-1 concave undercut … 0 straight … +1 convex",-1,1,.01],
  ["bl","Bottom land","flat resting band on the rim bottom (mm)",1,8,.1],
- ["bd","Bead","bead radius, 0 = beadless (mm)",0,2.5,.1],
+ ["bd","Bead","down-and-in lobe at the rim's bottom corner, 0 = beadless (mm)",0,2.5,.1],
  ["pt","Plate thickness","flight plate at center (mm)",1.2,4,.05],
  ["dr","Wall draft","inner rim wall lean (°)",0,10,.5],
  ["wf","Wall fillet","inner wall → plate blend (mm)",0,6,.1],
@@ -253,14 +253,16 @@ function discProfile(p, n=48){
   const w1=lerp2(s1, p.ws>=0?v1:[2*s1[0]-v1[0],2*s1[1]-v1[1]], Math.abs(p.ws));
   const w2=lerp2(s2, p.ws>=0?v2:[2*s2[0]-v2[0],2*s2[1]-v2[1]], Math.abs(p.ws));
   // bead / land / wall
-  const beadPts=[];
-  if(p.bd>0){ for(let a=270;a>=90;a-=15) beadPts.push([r_wall_b+p.bd*Math.cos(rad(a)), p.bd+p.bd*Math.sin(rad(a))]); }
-  else beadPts.push([r_wall_b,0]);
-  const wall_lo = p.bd>0 ? [r_wall_b,2*p.bd] : [r_wall_b,0];
+  // bead (Innova patent US5531624 fig.17): lobe at the foot of the inner wall,
+  // protruding down-and-inward, underside tangent to the resting plane
+  const bd=p.bd, beadPts = bd>0
+    ? bezpts([r_wall_b+0.2*bd,0],[r_wall_b-0.5*bd,0],[r_wall_b-bd,0.35*bd],[r_wall_b-bd,0.8*bd],10,false)
+      .concat(bezpts([r_wall_b-bd,0.8*bd],[r_wall_b-bd,1.5*bd],[r_wall_b,2.0*bd],[r_wall_b,2.4*bd],10,true))
+    : [[r_wall_b,0]];
   // plate underside: meets the shoulder at zU = z_S - pt (full plate thickness
   // preserved); wall fillet rounds the cavity corner downward into the wall
   const zU=z_S-p.pt;
-  const filc=Math.max(0, Math.min(p.wf, zU-(p.bd>0?2*p.bd:0)-1, 0.8*RW));
+  const filc=Math.max(0, Math.min(p.wf, zU-(p.bd>0?2.4*p.bd:0)-1, 0.8*RW));
   const W=[r_in, zU-filc];
   const q1=[r_in, zU-0.45*filc], q2=[r_in-0.45*filc, zU];
   const F=[r_in-filc, zU];
@@ -271,7 +273,7 @@ function discProfile(p, n=48){
     bezpts(T,t1,t2,S,n,false),
     bezpts(S,sh1,sh2,N,n,true),
     bezpts(N,w1,w2,B1,n,true),
-    beadPts, [wall_lo, W],
+    beadPts, [W],
     filc>0.01 ? bezpts(W,q1,q2,F,12,true) : [],
     bezpts(filc>0.01?F:W, f1,f2,C,n,true)
   );

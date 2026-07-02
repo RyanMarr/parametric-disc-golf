@@ -131,18 +131,29 @@ function disc_profile(
         w1 = _lerp2(s1, ws >= 0 ? v1 : [2*s1[0] - v1[0], 2*s1[1] - v1[1]], abs(ws)),
         w2 = _lerp2(s2, ws >= 0 ? v2 : [2*s2[0] - v2[0], 2*s2[1] - v2[1]], abs(ws)),
         // --- bottom land, bead, inner rim wall ---
+        // Bead (per Innova patent US5531624 fig. 17): a rounded lobe hanging
+        // at the foot of the inner wall, protruding down-and-inward. Its
+        // underside is tangent to the resting plane (the bead is the contact
+        // ring), the innermost apex sits LOW (z = 0.8*bd), and the top swells
+        // smoothly back into the wall — not a bump on the wall side.
         bead_pts = bd > 0
-            ? [for (a = [270 : -15 : 90])      // semicircular bump into the cavity
-                  [r_wall_b + bd * cos(a), bd + bd * sin(a)]]
+            ? concat(
+                bezpts([r_wall_b + 0.2*bd, 0],         // grounded foot
+                       [r_wall_b - 0.5*bd, 0],
+                       [r_wall_b - bd, 0.35*bd],
+                       [r_wall_b - bd, 0.8*bd], 10),   // apex: down-and-in
+                bezpts_tail([r_wall_b - bd, 0.8*bd],
+                       [r_wall_b - bd, 1.5*bd],
+                       [r_wall_b, 2.0*bd],
+                       [r_wall_b, 2.4*bd], 10))        // swell into the wall
             : [[r_wall_b, 0]],
-        wall_lo = bd > 0 ? [r_wall_b, 2 * bd] : [r_wall_b, 0],
         // --- flight plate underside ---
         // The underside meets the shoulder at zU = z_S - pt, so the plate
         // keeps ~full thickness all the way out. The wall fillet then rounds
         // the cavity corner by curving DOWN into the wall (adding material),
         // never up into the plate.
         zU   = z_S - pt,
-        filc = max(0, min(fil, zU - (bd > 0 ? 2*bd : 0) - 1, 0.8 * RW)),
+        filc = max(0, min(fil, zU - (bd > 0 ? 2.4*bd : 0) - 1, 0.8 * RW)),
         W  = [r_in, zU - filc],                // top of the straight inner wall
         q1 = [r_in, zU - 0.45 * filc],         // circular-arc approximation
         q2 = [r_in - 0.45 * filc, zU],
@@ -155,8 +166,8 @@ function disc_profile(
         bezpts(T, t1, t2, S, n),               // plate top (dome)
         bezpts_tail(S, sh1, sh2, N, n),        // shoulder down to nose
         bezpts_tail(N, w1, w2, B1, n),         // wing underside
-        bead_pts,                              // land inner edge / bead bump
-        [wall_lo, W],                          // inner rim wall
+        bead_pts,                              // land inner edge / bead lobe
+        [W],                                   // inner rim wall
         filc > 0.01 ? bezpts_tail(W, q1, q2, F, 12) : [],  // corner fillet
         bezpts_tail(filc > 0.01 ? F : W, f1, f2, C, n)     // flight plate underside
     );                                         // polygon closes C -> T along the axis
