@@ -187,7 +187,8 @@ function P(name,brand,cat,dims,maxW,flight,s,note){
   return { name, brand, cat, maxW, flight, note,
     p: { d:dims[0], h:dims[1], rd:dims[2], rw:dims[3],
          dm:s.dm, sr:(s.sr===undefined?0.35:s.sr),
-         nh:s.nh, ns:s.ns, ws:s.ws, bl:s.bl, bd:s.bd, pt:s.pt,
+         nh:s.nh, ns:s.ns, ws:s.ws, bl:s.bl, bd:s.bd,
+         ba:(s.ba===undefined?0:s.ba), pt:s.pt,
          dr:2, wf:3 } };
 }
 
@@ -205,7 +206,8 @@ const SHAPE_FIELDS = [
  ["ns","Nose sharpness","0 = blunt putter … 1 = sharp driver",0,1,.01],
  ["ws","Wing shape","-1 concave undercut … 0 straight … +1 convex",-1,1,.01],
  ["bl","Bottom land","flat resting band on the rim bottom (mm)",1,8,.1],
- ["bd","Bead","down-and-in lobe at the rim's bottom corner, 0 = beadless (mm)",0,2.5,.1],
+ ["bd","Bead","lobe at the rim's bottom corner, 0 = beadless (mm)",0,2.5,.1],
+ ["ba","Bead angle","0 = straight down … 90 = inward from the wall (°)",0,90,1],
  ["pt","Plate thickness","flight plate at center (mm)",1.2,4,.05],
  ["dr","Wall draft","inner rim wall lean (°)",0,10,.5],
  ["wf","Wall fillet","inner wall → plate blend (mm)",0,6,.1],
@@ -247,7 +249,8 @@ function discProfile(p, n=48){
   // plane — the bead ring hangs below it and is the actual contact ring
   const r_wall_b=r_in+Math.tan(rad(p.dr))*RD;
   const land_out=r_wall_b+p.bl;
-  const lift=p.bd>0 ? 0.4*p.bd : 0;
+  const ba=p.ba===undefined?0:p.ba;
+  const lift=p.bd>0 ? 0.8*p.bd*Math.cos(rad(ba)) : 0;
   const B1=[land_out,lift];
   const s1=lerp2(N,B1,1/3), s2=lerp2(N,B1,2/3);
   const v1=[R, z_nose*(1-lerp(0.35,0.65,1-p.ns))];
@@ -255,18 +258,25 @@ function discProfile(p, n=48){
   const w1=lerp2(s1, p.ws>=0?v1:[2*s1[0]-v1[0],2*s1[1]-v1[1]], Math.abs(p.ws));
   const w2=lerp2(s2, p.ws>=0?v2:[2*s2[0]-v2[0],2*s2[1]-v2[1]], Math.abs(p.ws));
   // bead / land / wall
-  // bead (Innova patent US5531624 fig.17): lobe hanging below the lifted land
-  // and inward past the wall; grounded on z=0, low apex, ogee into the wall
-  const bd=p.bd, co=Math.min(bd,0.8*p.bl);
-  const beadPts = bd>0
-    ? bezpts([r_wall_b+co,lift],[r_wall_b+0.5*co,lift],[r_wall_b+0.15*co,0],[r_wall_b-0.35*bd,0],8,false)
-      .concat(bezpts([r_wall_b-0.35*bd,0],[r_wall_b-0.75*bd,0],[r_wall_b-bd,0.35*bd],[r_wall_b-bd,0.8*bd],8,true))
-      .concat(bezpts([r_wall_b-bd,0.8*bd],[r_wall_b-bd,1.5*bd],[r_wall_b,2.0*bd],[r_wall_b,2.4*bd],8,true))
-    : [[r_wall_b,0]];
+  // bead: circular lobe (radius 0.85*bd) tangent to the resting plane;
+  // bead_angle = protrusion direction (0 straight down, 90 inward). z=0 is
+  // always the bead bottom / contact ring; the land floats `lift` above it.
+  const bd=p.bd;
+  let beadPts=[[r_wall_b,0]];
+  if(bd>0){
+    const rb=0.85*bd, Cx=r_wall_b-bd*Math.sin(rad(ba))+rb, Cz=rb;
+    const xj=Math.min(Cx+Math.sqrt(Math.max(0,rb*rb-(rb-lift)*(rb-lift))), land_out-0.3);
+    const th_L=-Math.acos(Math.min(1,Math.max(-1,(xj-Cx)/rb)));
+    const z_j=Cz+Math.sqrt(Math.max(0,rb*rb-(Cx-r_wall_b)*(Cx-r_wall_b)));
+    const th_W=Math.atan2(z_j-Cz, r_wall_b-Cx)-2*Math.PI;
+    beadPts=[];
+    for(let t=0;t<=24;t++){ const th=th_L+(th_W-th_L)*t/24;
+      beadPts.push([Cx+rb*Math.cos(th), Cz+rb*Math.sin(th)]); }
+  }
   // plate underside: meets the shoulder at zU = z_S - pt (full plate thickness
   // preserved); wall fillet rounds the cavity corner downward into the wall
   const zU=z_S-p.pt;
-  const filc=Math.max(0, Math.min(p.wf, zU-(p.bd>0?2.4*p.bd:0)-1, 0.8*RW));
+  const filc=Math.max(0, Math.min(p.wf, zU-(p.bd>0?2*p.bd:0)-1, 0.8*RW));
   const W=[r_in, zU-filc];
   const q1=[r_in, zU-0.45*filc], q2=[r_in-0.45*filc, zU];
   const F=[r_in-filc, zU];
@@ -487,6 +497,7 @@ nose_sharpness  = ${state.ns};
 wing_shape      = ${state.ws};
 bottom_land     = ${state.bl};
 bead            = ${state.bd};
+bead_angle      = ${state.ba};
 plate_thickness = ${state.pt};
 inner_wall_draft= ${state.dr};
 wall_fillet     = ${state.wf};
@@ -494,7 +505,7 @@ density         = ${state.den};`;
 }
 
 // ================= URL state =================
-const KEYS=["d","h","rd","rw","dm","sr","nh","ns","ws","bl","bd","pt","dr","wf","den","pr"];
+const KEYS=["d","h","rd","rw","dm","sr","nh","ns","ws","bl","bd","ba","pt","dr","wf","den","pr"];
 let urlTimer=null;
 function writeUrl(){
   clearTimeout(urlTimer);
@@ -531,7 +542,7 @@ $("dlJson").addEventListener("click",()=>{
   const set={};
   const map={d:"diameter",h:"height",rd:"rim_depth",rw:"rim_width",dm:"dome",sr:"shoulder_roll",
              nh:"nose_height",ns:"nose_sharpness",ws:"wing_shape",bl:"bottom_land",bd:"bead",
-             pt:"plate_thickness",dr:"inner_wall_draft",wf:"wall_fillet",den:"density"};
+             ba:"bead_angle",pt:"plate_thickness",dr:"inner_wall_draft",wf:"wall_fillet",den:"density"};
   Object.entries(map).forEach(([k,scad])=>set[scad]=String(state[k]));
   const blob=new Blob([JSON.stringify({fileFormatVersion:"1",parameterSets:{[name]:set}},null,2)],
                       {type:"application/json"});

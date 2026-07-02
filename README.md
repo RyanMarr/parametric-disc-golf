@@ -52,7 +52,8 @@ The four **PDGA measurements** come straight off any disc's certification page a
 - `nose_sharpness` (0–1) — blunt putter nose → sharp driver nose. Roughly the inverse of PDGA's "Rim Configuration" rating (putters 55–70 → ~0.1; drivers 26–30 → ~0.75).
 - `wing_shape` (−1 to +1) — concave driver undercut → straight → convex putter wing.
 - `bottom_land` — width of the flat band the disc rests on.
-- `bead` — bead size in mm (0 = beadless). Modeled per Innova's patent cross-section (US5531624 fig. 17): a rounded lobe at the rim's bottom-inside corner that hangs **below** the surrounding rim bottom (the land is lifted 0.4×bead, so the bead ring is what the disc rests on) and protrudes inward past the wall, swelling smoothly back into it. Micro bead ≈ 0.4, classic (Wizard/Judge) ≈ 0.8–1, big bead ≈ 1.5.
+- `bead` — bead size in mm (0 = beadless). A circular lobe at the rim's bottom-inside corner, always tangent to the resting plane (the bead ring is what the disc rests on; with a bead the land floats above it). Micro bead ≈ 0.4, classic (Wizard/Judge) ≈ 0.8–1, big bead ≈ 1.5.
+- `bead_angle` (0–90°) — the direction the bead protrudes: **0° = straight down** from the rim bottom at the wall line (how most beaded putters look — default), 45° ≈ the diagonal lobe in Innova's patent cross-section (US5531624 fig. 17), 90° = inward from the wall.
 - `plate_thickness`, `inner_wall_draft`, `wall_fillet` — flight plate and inner rim details.
 - `label_text` — optional text engraved into the **underside** of the flight plate, centered (mirrored so it reads correctly when you flip the disc over; `label_size`/`label_depth` to taste).
 

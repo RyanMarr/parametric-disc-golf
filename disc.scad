@@ -44,6 +44,8 @@ wing_shape = -0.25; // [-1:0.01:1]
 bottom_land = 3.0; // [1:0.1:8]
 // Bead radius on inner-bottom of rim (0 = beadless)
 bead = 0.0; // [0:0.1:2.5]
+// Direction the bead protrudes: 0 = straight down from the rim bottom (typical), 90 = inward from the wall
+bead_angle = 0; // [0:1:90]
 // Flight plate thickness at center
 plate_thickness = 2.0; // [1.2:0.05:4]
 // Inner rim wall lean, degrees outward at the bottom
@@ -95,7 +97,7 @@ function disc_profile(
         D = diameter, H = height, RD = rim_depth, RW = rim_width,
         dm = dome, sr = shoulder_roll,
         nh = nose_height, ns = nose_sharpness, ws = wing_shape,
-        land = bottom_land, bd = bead, pt = plate_thickness,
+        land = bottom_land, bd = bead, ba = bead_angle, pt = plate_thickness,
         draft = inner_wall_draft, fil = wall_fillet, n = curve_steps) =
     let (
         R        = D / 2,
@@ -126,7 +128,7 @@ function disc_profile(
         // disc actually rests on (z=0 stays the resting plane).
         r_wall_b = r_in + tan(draft) * RD,     // wall radius at the bottom (drafted)
         land_out = r_wall_b + land,
-        lift = bd > 0 ? 0.4 * bd : 0,
+        lift = bd > 0 ? 0.8 * bd * cos(ba) : 0,
         B1 = [land_out, lift],
         s1 = _lerp2(N, B1, 1/3),               // straight-chord controls
         s2 = _lerp2(N, B1, 2/3),
@@ -135,26 +137,23 @@ function disc_profile(
         w1 = _lerp2(s1, ws >= 0 ? v1 : [2*s1[0] - v1[0], 2*s1[1] - v1[1]], abs(ws)),
         w2 = _lerp2(s2, ws >= 0 ? v2 : [2*s2[0] - v2[0], 2*s2[1] - v2[1]], abs(ws)),
         // --- bottom land, bead, inner rim wall ---
-        // Bead (per Innova patent US5531624 fig. 17): a rounded lobe hanging
-        // at the foot of the inner wall, protruding below the lifted land AND
-        // inward past the wall. From the land: a shallow cove drops to the
-        // grounded bead bottom (tangent to z=0), rounds up-inward to a LOW
-        // apex (z = 0.8*bd), then swells smoothly back into the wall.
-        co = min(bd, 0.8 * land),              // cove width (stay on the land)
+        // Bead: a circular lobe (radius 0.85*bd) tangent to the resting plane;
+        // bead_angle sets its protrusion direction. 0 deg: the lobe hangs
+        // straight down from the rim bottom at the wall line (photos of
+        // Judge/Wizard-style beads); 90 deg: it bulges inward past the wall
+        // (patent fig. 17 style). z=0 is always the bead bottom / contact
+        // ring; the land floats `lift` above it. The outline follows the
+        // circle from the land, under the lobe, up to the wall joint.
+        rb   = 0.85 * bd,
+        Cx   = r_wall_b - bd * sin(ba) + rb,   // apex sits bd*sin(ba) inside the wall
+        Cz   = rb,
+        xj   = min(Cx + sqrt(max(0, rb*rb - (rb - lift)*(rb - lift))), land_out - 0.3),
+        th_L = -acos(min(1, max(-1, (xj - Cx) / rb))),           // land-side joint
+        z_j  = Cz + sqrt(max(0, rb*rb - (Cx - r_wall_b)*(Cx - r_wall_b))),
+        th_W = atan2(z_j - Cz, r_wall_b - Cx) - 360,             // wall joint (clockwise)
         bead_pts = bd > 0
-            ? concat(
-                bezpts([r_wall_b + co, lift],          // cove: land -> bead bottom
-                       [r_wall_b + 0.5*co, lift],
-                       [r_wall_b + 0.15*co, 0],
-                       [r_wall_b - 0.35*bd, 0], 8),
-                bezpts_tail([r_wall_b - 0.35*bd, 0],   // grounded foot -> apex
-                       [r_wall_b - 0.75*bd, 0],
-                       [r_wall_b - bd, 0.35*bd],
-                       [r_wall_b - bd, 0.8*bd], 8),
-                bezpts_tail([r_wall_b - bd, 0.8*bd],   // ogee into the wall
-                       [r_wall_b - bd, 1.5*bd],
-                       [r_wall_b, 2.0*bd],
-                       [r_wall_b, 2.4*bd], 8))
+            ? [for (t = [0:24]) let (th = th_L + (th_W - th_L) * t / 24)
+                  [Cx + rb * cos(th), Cz + rb * sin(th)]]
             : [[r_wall_b, 0]],
         // --- flight plate underside ---
         // The underside meets the shoulder at zU = z_S - pt, so the plate
@@ -162,7 +161,7 @@ function disc_profile(
         // the cavity corner by curving DOWN into the wall (adding material),
         // never up into the plate.
         zU   = z_S - pt,
-        filc = max(0, min(fil, zU - (bd > 0 ? 2.4*bd : 0) - 1, 0.8 * RW)),
+        filc = max(0, min(fil, zU - (bd > 0 ? 2*bd : 0) - 1, 0.8 * RW)),
         W  = [r_in, zU - filc],                // top of the straight inner wall
         q1 = [r_in, zU - 0.45 * filc],         // circular-arc approximation
         q2 = [r_in - 0.45 * filc, zU],
