@@ -1,6 +1,6 @@
 # Parametric Disc Golf Disc Generator
 
-Design your own disc golf discs. This repo is a parametric OpenSCAD model of a disc golf disc, plus preset numbers for 27 famous
+Design your own disc golf discs. This repo is a parametric OpenSCAD model of a disc golf disc, plus preset numbers for 28 famous
 PDGA-approved molds and a web-based designer. Punch in the four official PDGA
 measurements for any approved disc, tune a handful of shape sliders to match its
 silhouette, and print your own prototypes.
@@ -14,7 +14,7 @@ silhouette, and print your own prototypes.
 | File | What it is |
 |---|---|
 | `disc.scad` | The parametric model. Open in OpenSCAD, tweak via **Window → Customizer**, export STL. |
-| `disc.json` | Customizer preset sets for all 27 famous molds — loads automatically next to `disc.scad` (pick a preset from the Customizer dropdown). |
+| `disc.json` | Customizer preset sets for all 28 famous molds — loads automatically next to `disc.scad` (pick a preset from the Customizer dropdown). |
 | `designer.html` | Interactive designer: live cross-section preview, weight estimate, PDGA legality checks, shareable URLs. **[Use it online](https://ryanmarr.github.io/parametric-disc-golf/designer.html)** or just double-click the file (no server needed). |
 
 ## Quick start
@@ -48,7 +48,7 @@ The four **PDGA measurements** come straight off any disc's certification page a
 
 - `dome` (0–1) — flat top → very domey. Note: actual dome *height* is `height − rim_depth − plate_thickness`, which falls out of the PDGA numbers; this slider shapes the curve.
 - `shoulder_roll` (0–1) — 0 keeps a flat band on top of the rim (visible crease where the dome meets it); higher values roll the dome continuously over the shoulder toward the nose, like most real molds. No effect on flat-top discs.
-- `nose_height` (0.1–0.7) — where the widest point sits, as a fraction of height. Drivers ≈ 0.3, putters ≈ 0.5.
+- `nose_height` (0.05–0.9) — the **parting line**: where the widest point sits, as a fraction of height. The dominant stability driver — Paradox ≈ 0.15 (super flippy), drivers ≈ 0.3, putters ≈ 0.5, Tilt ≈ 0.8 (parting line at the top plate, hyzer-only).
 - `nose_sharpness` (0–1) — blunt putter nose → sharp driver nose. Roughly the inverse of PDGA's "Rim Configuration" rating (putters 55–70 → ~0.1; drivers 26–30 → ~0.75).
 - `wing_shape` (−1 to +1) — concave driver undercut → straight → convex putter wing.
 - `bottom_land` — width of the flat band the disc rests on.
@@ -79,6 +79,7 @@ numbers are manufacturer-published. All lengths in mm, max weight in g.
 | Discmania MD3 | 5/5/0/2 | 218 | 19 | 13 | 14 | 180.9 |
 | Axiom Hex | 5/5/−1/1 | 214 | 16 | 13 | 14 | 177.6 |
 | DD EMAC Truth | 5/5/0/2 | 217 | 18 | 12 | 15 | 180.1 |
+| Axiom Paradox | 5/4/−4/0 | 215 | 18 | 13 | 13 | 178.5 |
 | **Fairway drivers** |
 | Innova Teebird | 7/5/0/2 | 212 | 15 | 11 | 17 | 176.0 |
 | Innova Leopard | 6/5/−2/1 | 212 | 16 | 11 | 16 | 176.0 |
@@ -95,6 +96,36 @@ numbers are manufacturer-published. All lengths in mm, max weight in g.
 | Innova Shryke | 13/6/−2/2 | 211 | 17 | 12 | 23 | 175.1 |
 | Discmania DD3 | 12/5/−1/3 | 210 | 18 | 12 | 24 | 174.3 |
 | Discraft Nuke | 13/5/−1/3 | 212 | 16 | 12 | 25 | 176.0 |
+
+## Estimated flight numbers
+
+The designer (and the `echo` in disc.scad) estimates speed / glide / turn / fade
+from the geometry as you design. The models are least-squares fits on this
+repo's 28 PDGA-verified presets, with extreme discs (Tilt +1/6, Paradox −4/0,
+Roadrunner −4) weighted more heavily so the stability scale spans the real
+range; cross-validated leave-one-out (typical error ±0.6–0.8 per number —
+comparable to published attempts on 900+ discs):
+
+- **Speed** ← rim width. The dominant driver everywhere: r = 0.96 on a
+  112-disc Innova dataset ([engenmt/Disc-Golf](https://github.com/engenmt/Disc-Golf)),
+  whose fit (speed ≈ 7.11 × rim-width-cm − 4.77) matches ours. Roughly +1 speed per +1.4 mm of rim.
+- **Glide** ← dome height (camber → lift), rim width, and (negatively) rim-depth-to-diameter ratio.
+- **Turn & fade** ← nose height (plus dome, and wing shape for turn). Nose
+  height **is** the parting-line height — the community's strongest stability
+  predictor (higher PLH = more overstable): [Flight Factory](https://flightfactorydiscs.com/blogs/flightfactoryblog/how-parting-line-height-and-dome-measurements-help-predict-flight),
+  [Mint Discs](https://mintdiscs.com/blogs/news/understanding-your-disc-volume-1-parting-line-height).
+  The Tilt (parting line at the top plate) and Paradox (parting line at the
+  bottom) anchor the two ends of the scale.
+  Flat tops add fade; domey tops add turn ([DG Puttheads](https://www.dgputtheads.com/how-dome-height-changes-flight-stability)).
+
+Caveats worth knowing: manufacturer flight numbers are marketing estimates,
+not measurements, and are inconsistent across brands; glide is the most
+inflated number ([straslerj's analysis](https://github.com/straslerj/disc-golf-flight-numbers))
+and the model can't see outliers like the Tilt's glide-1 brick flight; the
+Roadrunner's −4 turn still reads as ≈ −2.5; and printed weight, plastic
+stiffness, and your arm speed all shift real flight.
+Physics background: Hummel's [Frisbee flight simulation thesis](https://morleyfielddgc.wordpress.com/wp-content/uploads/2009/04/hummelthesis.pdf)
+and Potts & Crowther's wind-tunnel work.
 
 ## PDGA legality (what the checks enforce)
 
