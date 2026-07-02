@@ -178,14 +178,15 @@ const PRESETS = [
  P("MD3","Discmania","midrange",[218,19,13,14],180.9,[5,5,0,2],{dm:.3,nh:.45,ns:.39,ws:.35,bl:3.5,bd:.5,pt:2.6},"moderately flat, Roc-like beaded rim"),
  P("Hex","Axiom","midrange",[214,16,13,14],177.6,[5,5,-1,1],{dm:.25,nh:.45,ns:.38,ws:.3,bl:3,bd:0,pt:2.2},"very low flat profile"),
  P("EMAC Truth","Dynamic Discs","midrange",[217,18,12,15],180.1,[5,5,0,2],{dm:.3,nh:.45,ns:.44,ws:.25,bl:3.5,bd:.4,pt:2.4},"flat-ish top, small bead"),
+ P("Paradox","Axiom","midrange",[215,18,13,13],178.5,[5,4,-4,0],{dm:.3,nh:.15,ns:.3,ws:.3,bl:3.5,bd:0,pt:2.4},"parting line hugs the bottom — the flippiest mid in production (GYRO overmold)"),
  P("Teebird","Innova","fairway",[212,15,11,17],176,[7,5,0,2],{dm:.25,nh:.36,ns:.73,ws:-.1,bl:3,bd:0,pt:2.2},"low flat workhorse fairway"),
  P("Leopard","Innova","fairway",[212,16,11,16],176,[6,5,-2,1],{dm:.45,nh:.36,ns:.73,ws:-.1,bl:3,bd:0,pt:2.2},"slightly domed, understable"),
  P("Eagle","Innova","fairway",[212,16,12,17],176,[7,4,-1,3],{dm:.3,nh:.36,ns:.72,ws:-.15,bl:3,bd:0,pt:2.2},"flat, deeper rim, dependable fade"),
  P("River","Latitude 64","fairway",[215,19,12,18],178.5,[7,7,-1,1],{dm:.6,sr:.5,nh:.36,ns:.7,ws:-.1,bl:3,bd:0,pt:2.2},"tall, domey, max glide"),
  P("Undertaker","Discraft","fairway",[211,18,11,19],175.1,[9,5,-1,2],{dm:.45,nh:.35,ns:.69,ws:-.15,bl:3,bd:0,pt:2.2},"slight dome, wider-rim workhorse"),
  P("FD","Discmania","fairway",[212,18,11,18],176,[7,6,-1,1],{dm:.35,nh:.36,ns:.61,ws:-.1,bl:3,bd:0,pt:2.2},"flat-top gliding control driver"),
- P("Roadrunner","Innova","fairway",[211,14,12,18],175.1,[9,5,-4,1],{dm:.4,nh:.33,ns:.7,ws:-.2,bl:3,bd:0,pt:2},"low, rounded shoulder — understable roller machine"),
- P("Tilt","Discmania","fairway",[211,16,12,20],175.1,[9,1,1,6],{dm:.7,sr:.5,nh:.4,ns:.3,ws:-.2,bl:3,bd:0,pt:2.5},"half putter, half driver: domed blunt top on a wide rim, hyzer-only (Lizotte)"),
+ P("Roadrunner","Innova","fairway",[211,14,12,18],175.1,[9,5,-4,1],{dm:.4,nh:.28,ns:.7,ws:-.2,bl:3,bd:0,pt:2},"low parting line, rounded shoulder — understable roller machine"),
+ P("Tilt","Discmania","fairway",[211,16,12,20],175.1,[9,1,1,6],{dm:.7,sr:.5,nh:.8,ns:.3,ws:-.2,bl:3,bd:0,pt:2.5},"parting line at the top plate on a wide rim — hyzer-only utility (Lizotte)"),
  P("Destroyer","Innova","distance",[211,14,12,22],175.1,[12,5,-1,3],{dm:.2,nh:.3,ns:.7,ws:-.3,bl:2.5,bd:0,pt:2},"the benchmark power distance driver"),
  P("Wraith","Innova","distance",[211,14,12,21],175.1,[11,5,-1,3],{dm:.25,nh:.3,ns:.78,ws:-.3,bl:2.5,bd:0,pt:2},"sleek low profile, smooth stable"),
  P("Zeus","Discraft","distance",[211,16,12,23],175.1,[12,5,-1,3],{dm:.4,nh:.3,ns:.74,ws:-.3,bl:2.5,bd:0,pt:2},"McBeth power driver, blunter wing"),
@@ -212,7 +213,7 @@ const PDGA_FIELDS = [
 const SHAPE_FIELDS = [
  ["dm","Dome","0 = flat top … 1 = very domey",0,1,.01],
  ["sr","Shoulder roll","0 = flat shoulder band … 1 = dome rolls over the rim",0,1,.01],
- ["nh","Nose height","widest point, as fraction of height",.1,.7,.01],
+ ["nh","Nose height","parting line: widest point as fraction of height (Paradox .15 … Tilt .8)",.05,.9,.01],
  ["ns","Nose sharpness","0 = blunt putter … 1 = sharp driver",0,1,.01],
  ["ws","Wing shape","-1 concave undercut … 0 straight … +1 convex",-1,1,.01],
  ["bl","Bottom land","flat resting band on the rim bottom (mm)",1,8,.1],
@@ -222,7 +223,7 @@ const SHAPE_FIELDS = [
  ["dr","Wall draft","inner rim wall lean (°)",0,10,.5],
  ["wf","Wall fillet","inner wall → plate blend (mm)",0,6,.1],
 ];
-const state = Object.assign({}, PRESETS[21].p, { den:1.21, mat:"1.21", pr:21 });
+const state = Object.assign({}, PRESETS[22].p, { den:1.21, mat:"1.21", pr:22 });
 
 // ================= Geometry (1:1 port of disc.scad) =================
 const lerp = (a,b,t)=>a+(b-a)*t;
@@ -303,19 +304,21 @@ function discProfile(p, n=48){
   );
 }
 // ---- Flight number estimate ----
-// Least-squares fits on this file's 27 PDGA-verified presets (LOOCV MAE:
-// speed 0.56, glide 0.81, turn 0.57, fade 0.86). Speed matches the published
-// 112-disc Innova fit (speed = 7.11*rw_cm - 4.77, engenmt/Disc-Golf). Nose
-// height acts as a parting-line-height proxy — the community's strongest
-// stability predictor (Flight Factory, Mint Discs). Same math as disc.scad.
+// Least-squares fits on this file's 28 PDGA-verified presets, with extreme
+// discs (Tilt +1/6, Paradox -4/0, Roadrunner -4) weighted 1+0.6*|value| so
+// the stability scale spans the real range (LOOCV MAE: speed 0.56, glide
+// 0.78, turn 0.75, fade 0.69). Speed matches the published 112-disc Innova
+// fit (speed = 7.11*rw_cm - 4.77, engenmt/Disc-Golf). Nose height IS the
+// parting line — the community's strongest stability predictor (Flight
+// Factory, Mint Discs). Same math as disc.scad.
 function flightEst(p){
   const clamp=(v,lo,hi)=>Math.min(hi,Math.max(lo,v));
   const domeH=Math.max(0,p.h-p.rd-p.pt);
   return [
     clamp(-5.386 + 0.7475*p.rw, 1, 14.5),                                   // speed
-    clamp( 5.319 + 0.150*domeH + 0.085*p.rw - 0.441*(100*p.rd/p.d), 1, 7),  // glide
-    clamp(-12.444 - 0.245*p.dm + 20.246*p.nh + 0.230*p.rw, -5, 1.5),        // turn
-    clamp(-9.681 + 0.360*p.rw + 15.584*p.nh - 0.961*p.dm, 0, 6),            // fade
+    clamp( 5.249 + 0.151*domeH + 0.086*p.rw - 0.434*(100*p.rd/p.d), 1, 7),  // glide
+    clamp(-8.869 - 1.954*p.dm + 8.935*p.nh + 3.095*p.ws + 0.289*p.rw, -5, 1.5), // turn
+    clamp(-4.554 + 0.243*p.rw + 8.955*p.nh - 2.395*p.dm, 0, 6),             // fade
   ];
 }
 function volumeMm3(pts){

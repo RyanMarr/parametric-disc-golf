@@ -5,7 +5,7 @@
 //  height, rim depth, rim width) for any approved mold, then
 //  tune the shape-character sliders to match its silhouette.
 //
-//  Preset numbers for 27 famous molds live in disc.json
+//  Preset numbers for 28 famous molds live in disc.json
 //  (OpenSCAD Customizer parameter sets: Window > Customizer,
 //  then pick a preset from the dropdown) and in README.md.
 //
@@ -34,8 +34,8 @@ rim_width = 22.0; // [8:0.1:26]
 dome = 0.45; // [0:0.01:1]
 // Rolls the dome smoothly over the shoulder: 0 = flat shoulder band, 1 = continuous rollover into the nose (no effect on flat tops)
 shoulder_roll = 0.35; // [0:0.01:1]
-// Height of the widest point (nose apex) as a fraction of disc height
-nose_height = 0.35; // [0.1:0.01:0.7]
+// Parting line: height of the widest point as a fraction of disc height (Paradox ~0.15, most discs 0.3-0.5, Tilt ~0.8)
+nose_height = 0.35; // [0.05:0.01:0.9]
 // 0 = blunt rounded nose (putter), 1 = sharp aerodynamic nose (driver)
 nose_sharpness = 0.7; // [0:0.01:1]
 // Underside of the wing: -1 = concave undercut (driver), 0 = straight, 1 = convex rounded (putter)
@@ -196,19 +196,20 @@ volume_mm3 = 2 * PI * abs(centroidX) * areaAbs; // solid of revolution
 weight_g   = volume_mm3 * density / 1000;
 
 // ---- Flight number estimate (same math as designer.html) ----
-// Least-squares fits on the 27 PDGA-verified presets in disc.json (LOOCV
-// MAE: speed 0.56, glide 0.81, turn 0.57, fade 0.86). See README for method
-// and sources. Estimates, not gospel: turn/fade of extreme utility discs
-// (Zone, Tilt) are underpredicted.
+// Least-squares fits on the 28 PDGA-verified presets in disc.json, extreme
+// discs (Tilt, Paradox, Roadrunner) weighted 1+0.6*|value| so the stability
+// scale spans the real range (LOOCV MAE: speed 0.56, glide 0.78, turn 0.75,
+// fade 0.69). nose_height is the parting line — the dominant stability
+// driver. See README for method and sources.
 function _clamp(v, lo, hi) = min(hi, max(lo, v));
 _domeH = max(0, height - rim_depth - plate_thickness);
 est_speed = _clamp(-5.386 + 0.7475*rim_width, 1, 14.5);
-est_glide = _clamp( 5.319 + 0.150*_domeH + 0.085*rim_width
-                   - 0.441*(100*rim_depth/diameter), 1, 7);
-est_turn  = _clamp(-12.444 - 0.245*dome + 20.246*nose_height
-                   + 0.230*rim_width, -5, 1.5);
-est_fade  = _clamp(-9.681 + 0.360*rim_width + 15.584*nose_height
-                   - 0.961*dome, 0, 6);
+est_glide = _clamp( 5.249 + 0.151*_domeH + 0.086*rim_width
+                   - 0.434*(100*rim_depth/diameter), 1, 7);
+est_turn  = _clamp(-8.869 - 1.954*dome + 8.935*nose_height
+                   + 3.095*wing_shape + 0.289*rim_width, -5, 1.5);
+est_fade  = _clamp(-4.554 + 0.243*rim_width + 8.955*nose_height
+                   - 2.395*dome, 0, 6);
 echo(str("Estimated flight numbers: ",
     round(est_speed*2)/2, " / ", round(est_glide*2)/2, " / ",
     round(est_turn*2)/2,  " / ", round(est_fade*2)/2,
