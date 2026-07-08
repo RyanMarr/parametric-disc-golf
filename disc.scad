@@ -30,7 +30,9 @@ rim_depth = 12.0; // [8:0.1:18]
 rim_width = 22.0; // [8:0.1:26]
 
 /* [Shape Character] */
-// 0 = flat top, 1 = very domey
+// Print-ready flat top: the entire top becomes a perfect plane (dome and shoulder_roll ignored) and the model is oriented top-down, ready to print without supports
+flat_top = false;
+// 0 = flat top, 1 = very domey (ignored when flat_top is on)
 dome = 0.45; // [0:0.01:1]
 // Rolls the dome smoothly over the shoulder: 0 = flat shoulder band, 1 = continuous rollover into the nose (no effect on flat tops)
 shoulder_roll = 0.35; // [0:0.01:1]
@@ -58,6 +60,8 @@ wall_fillet_height = 3.0; // [0:0.1:8]
 /* [Weight Estimate] */
 // g/cm^3 — TPU 1.21, PETG 1.27, PLA 1.24, ABS 1.04, PP 0.90
 density = 1.21; // [0.8:0.01:1.5]
+// Printed weight / theoretical solid. Even "100% infill" prints run a few percent light (micro-voids, slight underextrusion); calibrated from a real PLA test print: 167 g measured vs 178.4 g theoretical = 0.936
+print_factor = 0.94; // [0.8:0.01:1]
 
 /* [Output] */
 // Render only half the disc to inspect the cross-section
@@ -101,29 +105,33 @@ function disc_profile(
         nh = nose_height, ns = nose_sharpness, ws = wing_shape,
         land = bottom_land, bd = bead, ba = bead_angle, pt = plate_thickness,
         draft = inner_wall_draft, fil = wall_fillet, filh_in = wall_fillet_height,
-        n = curve_steps) =
+        ft = flat_top, n = curve_steps) =
     let (
         R        = D / 2,
         r_in     = R - RW,                     // inner rim wall radius (at top of wall)
         z_nose   = H * nh,                     // height of widest point
         z_S      = min(RD + pt, H),            // shoulder height (plate top at the rim)
+        // flat_top: the entire top is a perfect plane at z = H (dome and
+        // shoulder_roll ignored; the dome region is filled solid). The
+        // underside keeps its rim_depth geometry, so only the top changes.
+        z_top    = ft ? H : z_S,
         flat     = _lerp(0.80, 0.30, dm),      // how long the dome stays high
-        // --- plate top: center (0,H) -> shoulder (r_in, z_S) ---
+        // --- plate top: center (0,H) -> shoulder (r_in, z_top) ---
         // shoulder_roll tilts the shared tangent at S downward (angle sa), so
         // the dome rolls continuously over the shoulder instead of flattening
         // into a brim (which leaves a visible curvature crease). sa fades out
         // as the dome height approaches zero: flat tops keep a flat shoulder.
-        sa   = sr * 22 * min(1, (H - z_S) / 2.5),
-        tilt = min(0.15 * r_in * sin(sa), 0.8 * (H - z_S)),
+        sa   = sr * 22 * min(1, (H - z_top) / 2.5),
+        tilt = min(0.15 * r_in * sin(sa), 0.8 * (H - z_top)),
         T  = [0, H],
-        S  = [r_in, z_S],
+        S  = [r_in, z_top],
         t1 = [flat * r_in, H],
-        t2 = [r_in - 0.15 * r_in * cos(sa), z_S + tilt],
+        t2 = [r_in - 0.15 * r_in * cos(sa), z_top + tilt],
         // --- shoulder -> nose (R, z_nose), spans the rim width ---
         N  = [R, z_nose],
-        nose_r = (z_S - z_nose) * _lerp(0.65, 0.12, ns),
+        nose_r = (z_top - z_nose) * _lerp(0.65, 0.12, ns),
         shoff = _lerp(0.30, 0.55, 1 - ns) * RW,
-        sh1 = [r_in + shoff * cos(sa), z_S - shoff * sin(sa)],  // same tangent as t2
+        sh1 = [r_in + shoff * cos(sa), z_top - shoff * sin(sa)],  // same tangent as t2
         sh2 = [R, z_nose + nose_r],            // vertical arrival just above nose
         // --- wing underside: nose (R, z_nose) -> land edge ---
         // With a bead, the land floats `lift` above the resting plane: the
@@ -204,7 +212,7 @@ area2     = _shoelace(profile);                 // 2x signed area
 areaAbs   = abs(area2) / 2;
 centroidX = _cx_num(profile) / (3 * area2);
 volume_mm3 = 2 * PI * abs(centroidX) * areaAbs; // solid of revolution
-weight_g   = volume_mm3 * density / 1000;
+weight_g   = volume_mm3 * density * print_factor / 1000;
 
 // ---- Flight number estimate (same math as designer.html) ----
 // Least-squares fits on the 28 PDGA-verified presets in disc.json, extreme
@@ -213,14 +221,16 @@ weight_g   = volume_mm3 * density / 1000;
 // fade 0.69). nose_height is the parting line — the dominant stability
 // driver. See README for method and sources.
 function _clamp(v, lo, hi) = min(hi, max(lo, v));
-_domeH = max(0, height - rim_depth - plate_thickness);
+// flat_top fills the dome region: no camber, dome-effect zero
+_domeH = flat_top ? 0 : max(0, height - rim_depth - plate_thickness);
+_dome  = flat_top ? 0 : dome;
 est_speed = _clamp(-5.386 + 0.7475*rim_width, 1, 14.5);
 est_glide = _clamp( 5.249 + 0.151*_domeH + 0.086*rim_width
                    - 0.434*(100*rim_depth/diameter), 1, 7);
-est_turn  = _clamp(-8.869 - 1.954*dome + 8.935*nose_height
+est_turn  = _clamp(-8.869 - 1.954*_dome + 8.935*nose_height
                    + 3.095*wing_shape + 0.289*rim_width, -5, 1.5);
 est_fade  = _clamp(-4.554 + 0.243*rim_width + 8.955*nose_height
-                   - 2.395*dome, 0, 6);
+                   - 2.395*_dome, 0, 6);
 echo(str("Estimated flight numbers: ",
     round(est_speed*2)/2, " / ", round(est_glide*2)/2, " / ",
     round(est_turn*2)/2,  " / ", round(est_fade*2)/2,
@@ -233,7 +243,9 @@ inside_rim_d    = diameter - 2 * rim_width;     // must be >= 158 mm
 echo(str("=== Disc: D=", diameter, "mm H=", height, "mm rimDepth=", rim_depth,
          "mm rimWidth=", rim_width, "mm ==="));
 echo(str("Estimated solid volume: ", round(volume_mm3 / 100) / 10, " cm^3"));
-echo(str("Estimated weight @ ", density, " g/cm^3: ", round(weight_g * 10) / 10, " g"));
+echo(str("Estimated printed weight @ ", density, " g/cm^3 x ", print_factor,
+         " print factor: ", round(weight_g * 10) / 10, " g"));
+if (flat_top) echo("flat_top: model is oriented top-down, ready to print without supports");
 echo(str("PDGA max legal weight for this diameter: ", round(pdga_max_weight * 10) / 10, " g",
          weight_g > pdga_max_weight ? "  ** OVER LIMIT (print lighter: infill/density) **" : "  (OK)"));
 if (diameter < 210)          echo("** PDGA: diameter under 21 cm minimum **");
@@ -267,11 +279,20 @@ module disc() {
     }
 }
 
+// flat_top exports the disc top-down (top plane on z=0), so the STL drops
+// into the slicer print-ready — no rotation, no supports.
+module disc_oriented() {
+    if (flat_top)
+        translate([0, 0, height]) rotate([180, 0, 0]) disc();
+    else
+        disc();
+}
+
 if (cross_section)
     difference() {
-        disc();
+        disc_oriented();
         translate([-diameter, -2*diameter, -1])
             cube([2*diameter, 2*diameter, height + 2]);
     }
 else
-    disc();
+    disc_oriented();

@@ -46,6 +46,7 @@ The four **PDGA measurements** come straight off any disc's certification page a
 
 **Shape character** sliders control what PDGA numbers can't capture:
 
+- `flat_top` — **print-ready mode**: the entire top becomes a perfect plane (dome and shoulder roll are ignored; the dome region is filled solid) and the model is exported **top-down**, so the STL drops into Bambu Studio / any slicer with no rotation and **no supports**. Discs print upside down, and a domed top only touches the build plate at a point — this mode trades the dome for a clean support-free print.
 - `dome` (0–1) — flat top → very domey. Note: actual dome *height* is `height − rim_depth − plate_thickness`, which falls out of the PDGA numbers; this slider shapes the curve.
 - `shoulder_roll` (0–1) — 0 keeps a flat band on top of the rim (visible crease where the dome meets it); higher values roll the dome continuously over the shoulder toward the nose, like most real molds. No effect on flat-top discs.
 - `nose_height` (0.05–0.9) — the **parting line**: where the widest point sits, as a fraction of height. The dominant stability driver — Paradox ≈ 0.15 (super flippy), drivers ≈ 0.3, putters ≈ 0.5, Tilt ≈ 0.8 (parting line at the top plate, hyzer-only).
@@ -148,8 +149,8 @@ flying like the real thing.
 ## Printing tips
 
 - **Material:** TPU (~95A) is the community favorite — durable and flexible like premium plastic. PETG works for stiff, overstable prototypes; PLA is easy but shatters on trees.
-- **Weight:** a 100 % solid TPU driver comes out ~180 g — over the max and sluggish. Tune slicer infill (e.g. 15–30 % gyroid) and wall count to hit your target; the solid-weight estimate here is your upper bound.
-- **Orientation:** print flat, top side up. No supports needed for most putter/mid profiles; drivers with strong wing undercuts may want a small support ring or a slightly less concave `wing_shape`.
+- **Weight:** the estimate is solid volume × density × `print_factor`. The 0.94 default is calibrated from a real 100 %-infill PLA print (167 g measured vs 178.4 g theoretical — even "solid" FDM prints run a few percent light from micro-voids and slight underextrusion). Re-calibrate for your printer by weighing one print and setting `print_factor` = measured ÷ theoretical. Tune slicer infill/walls down to hit lower targets.
+- **Orientation:** discs print upside down (top on the plate). Turn on `flat_top` for a support-free print — it makes the top perfectly planar and exports the STL already flipped, ready to slice. A domed top printed upside down touches the plate at a single point and needs supports, which rarely come out well.
 - **First layer:** the bottom land is the resting surface — a clean first layer matters. A slight negative `wing_shape` reduces elephant-foot impact on flight.
 - Export at `smoothness = 200+` and `curve_steps = 48+` for production STLs.
 
