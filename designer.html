@@ -282,7 +282,11 @@ function discProfile(p, n=48){
   const N=[R,z_nose];
   const nose_r=(z_top-z_nose)*lerp(0.65,0.12,p.ns);
   const shoff=lerp(0.30,0.55,1-p.ns)*RW;
-  const sh1=[r_in+shoff*Math.cos(sa), z_top-shoff*Math.sin(sa)];
+  // flat-top: shoulder departs the plate at the chamfer angle and steepens
+  // to the nose — smooth convex printable shoulder instead of a flat bevel
+  const fcE=p.fc===undefined?45:p.fc;
+  const da=p.ft ? rad(fcE) : sa;
+  const sh1=[r_in+shoff*Math.cos(da), z_top-shoff*Math.sin(da)];
   const sh2=[R, z_nose+nose_r];
   // wing underside; with a bead the land floats `lift` above the resting
   // plane — the bead ring hangs below it and is the actual contact ring

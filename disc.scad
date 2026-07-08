@@ -133,7 +133,13 @@ function disc_profile(
         N  = [R, z_nose],
         nose_r = (z_top - z_nose) * _lerp(0.65, 0.12, ns),
         shoff = _lerp(0.30, 0.55, 1 - ns) * RW,
-        sh1 = [r_in + shoff * cos(sa), z_top - shoff * sin(sa)],  // same tangent as t2
+        // Flat-top mode: the shoulder departs the plate at the chamfer angle
+        // and steepens continuously to the vertical nose - a smooth convex
+        // shoulder in which every point is printable, instead of a flat
+        // bevel. (The cone clamp below stays as a safety net; a convex
+        // curve falls below its departure tangent, so it rarely engages.)
+        da  = ft ? fc : sa,
+        sh1 = [r_in + shoff * cos(da), z_top - shoff * sin(da)],  // same tangent as t2
         sh2 = [R, z_nose + nose_r],            // vertical arrival just above nose
         // --- wing underside: nose (R, z_nose) -> land edge ---
         // With a bead, the land floats `lift` above the resting plane: the
