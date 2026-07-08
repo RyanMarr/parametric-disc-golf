@@ -560,33 +560,6 @@
       "wall_fillet_height": "3",
       "flat_top": "false",
       "label_text": ""
-    },
-    "Ryan's Putter": {
-      "$fa": "2",
-      "$fs": "0.4",
-      "bead": "0",
-      "bead_angle": "0",
-      "bottom_land": "4",
-      "cross_section": "true",
-      "curve_steps": "48",
-      "density": "1.21",
-      "diameter": "212",
-      "dome": "0",
-      "height": "19",
-      "inner_wall_draft": "2",
-      "label_depth": "0.4",
-      "label_size": "12",
-      "label_text": "",
-      "nose_height": "0.3",
-      "nose_sharpness": "0.14",
-      "plate_thickness": "3",
-      "rim_depth": "15",
-      "rim_width": "9",
-      "shoulder_roll": "0.35",
-      "smoothness": "200",
-      "wall_fillet": "3",
-      "wall_fillet_height": "3",
-      "wing_shape": "0.6"
     }
   }
 }
