@@ -246,8 +246,9 @@ const SHAPE_FIELDS = [
  ["dr","Wall draft","inner rim wall lean (°)",0,10,.5],
  ["wf","Wall fillet","corner blend: spread along the plate underside (mm)",0,6,.1],
  ["wh","Wall fillet height","corner blend: reach down the inner wall (mm)",0,8,.1],
+ ["fc","Flat-top chamfer","min shoulder steepness when flat top is on (° from horizontal)",30,60,1],
 ];
-const state = Object.assign({}, PRESETS[22].p, { den:1.21, mat:"1.21", pr:22, ft:0, pf:0.94 });
+const state = Object.assign({}, PRESETS[22].p, { den:1.21, mat:"1.21", pr:22, ft:0, pf:0.94, fc:45 });
 
 // ================= Geometry (1:1 port of disc.scad) =================
 const lerp = (a,b,t)=>a+(b-a)*t;
@@ -328,9 +329,17 @@ function discProfile(p, n=48){
   const f1m=0.15*(r_in-filc);
   const f1=[F[0]-f1m*Math.cos(sa), Math.min(zU+f1m*Math.sin(sa), H-p.pt)];
   const f2=[flat*r_in, H-p.pt];
+  // flat-top chamfer: clamp the shoulder under a cone at fc deg from the
+  // plate edge so it prints top-down without the 90-deg overhang; floored
+  // at the parting line so the widest point is never cut
+  const fc=p.fc===undefined?45:p.fc;
+  const shPts = p.ft
+    ? bezpts(S,sh1,sh2,N,n,true).map(q=>[q[0],
+        Math.min(q[1], Math.max(H-(q[0]-r_in)*Math.tan(rad(fc)), z_nose))])
+    : bezpts(S,sh1,sh2,N,n,true);
   return [].concat(
     bezpts(T,t1,t2,S,n,false),
-    bezpts(S,sh1,sh2,N,n,true),
+    shPts,
     bezpts(N,w1,w2,B1,n,true),
     beadPts, [W],
     hasFil ? bezpts(W,q1,q2,F,12,true) : [],
@@ -435,13 +444,16 @@ $("printfactor").addEventListener("input",e=>{
 $("flattop").addEventListener("change",e=>{
   state.ft=e.target.checked?1:0; syncFlatTop(); update();
 });
-// dome & shoulder roll are meaningless with a flat top — disable their rows
+// dome & shoulder roll are meaningless with a flat top — disable their rows;
+// the chamfer slider is only meaningful WITH a flat top
 function syncFlatTop(){
   $("flattop").checked=!!state.ft;
   ["dm","sr"].forEach(k=>{
     $(`r_${k}`).disabled=!!state.ft; $(`n_${k}`).disabled=!!state.ft;
     $(`r_${k}`).closest(".row").style.opacity=state.ft?0.4:1;
   });
+  $("r_fc").disabled=!state.ft; $("n_fc").disabled=!state.ft;
+  $("r_fc").closest(".row").style.opacity=state.ft?1:0.4;
 }
 
 function syncInputs(){
@@ -570,6 +582,26 @@ function update(){
     li.textContent="Nose sharpness > 0.9 — PDGA requires the leading edge to pass a 1.6 mm radius gauge"; ul.appendChild(li); }
   if(p.bd>0 ){ const li=document.createElement("li"); li.className="warn";
     li.textContent="Bead: PDGA requires the rim bottom to sit flush — keep beads small and smooth"; ul.appendChild(li); }
+  if(p.ft){
+    // residual print overhang across the shoulder, measured over a 0.3 mm
+    // radial window so single mesh-sample steps don't register as walls
+    const n=96, pts=discProfile(p,n);
+    let worst=0;
+    for(let i=n+1;i<=2*n;i++){
+      let j=i;
+      while(j<2*n && pts[j][0]-pts[i-1][0]<0.3) j++;
+      const dr=pts[j][0]-pts[i-1][0], dz=pts[i-1][1]-pts[j][1];
+      if(dr>1e-6) worst=Math.max(worst, Math.atan2(dr,Math.max(dz,1e-9))*180/Math.PI);
+    }
+    const li=document.createElement("li");
+    if(worst > 90-(p.fc??45)+3){
+      li.className="warn";
+      li.textContent=`Flat top: residual ${worst.toFixed(0)}° overhang near the nose — the rim is too wide/low for a full ${p.fc}° chamfer there (fine for most prints; slow overhangs + cooling)`;
+    } else {
+      li.textContent=`Flat top: max print overhang ${worst.toFixed(0)}° — prints support-free at the ${p.fc}° chamfer`;
+    }
+    ul.appendChild(li);
+  }
 
   $("scadOut").value=scadSnippet(w,vol);
   writeUrl();
@@ -609,12 +641,13 @@ inner_wall_draft= ${state.dr};
 wall_fillet     = ${state.wf};
 wall_fillet_height = ${state.wh};
 flat_top        = ${state.ft?"true":"false"};
+flat_top_chamfer = ${state.fc};
 density         = ${state.den};
 print_factor    = ${state.pf};`;
 }
 
 // ================= URL state =================
-const KEYS=["d","h","rd","rw","dm","sr","nh","ns","ws","bl","bd","ba","pt","dr","wf","wh","ft","pf","den","pr"];
+const KEYS=["d","h","rd","rw","dm","sr","nh","ns","ws","bl","bd","ba","pt","dr","wf","wh","ft","fc","pf","den","pr"];
 let urlTimer=null;
 function writeUrl(){
   clearTimeout(urlTimer);
@@ -652,7 +685,7 @@ $("dlJson").addEventListener("click",()=>{
   const map={d:"diameter",h:"height",rd:"rim_depth",rw:"rim_width",dm:"dome",sr:"shoulder_roll",
              nh:"nose_height",ns:"nose_sharpness",ws:"wing_shape",bl:"bottom_land",bd:"bead",
              ba:"bead_angle",pt:"plate_thickness",dr:"inner_wall_draft",wf:"wall_fillet",
-             wh:"wall_fillet_height",den:"density",pf:"print_factor"};
+             wh:"wall_fillet_height",fc:"flat_top_chamfer",den:"density",pf:"print_factor"};
   Object.entries(map).forEach(([k,scad])=>set[scad]=String(state[k]));
   set.flat_top = state.ft ? "true" : "false";
   const blob=new Blob([JSON.stringify({fileFormatVersion:"1",parameterSets:{[name]:set}},null,2)],

@@ -32,6 +32,8 @@ rim_width = 22.0; // [8:0.1:26]
 /* [Shape Character] */
 // Print-ready flat top: the entire top becomes a perfect plane (dome and shoulder_roll ignored) and the model is oriented top-down, ready to print without supports
 flat_top = false;
+// Flat-top only: minimum shoulder steepness in degrees from horizontal. The round shoulder is clamped to this chamfer so it prints cleanly top-down (overhang = 90 minus this). 45 is safe everywhere; drop toward 35 if your printer/cooling handles shallow overhangs and you want more of the round shoulder back
+flat_top_chamfer = 45; // [30:1:60]
 // 0 = flat top, 1 = very domey (ignored when flat_top is on)
 dome = 0.45; // [0:0.01:1]
 // Rolls the dome smoothly over the shoulder: 0 = flat shoulder band, 1 = continuous rollover into the nose (no effect on flat tops)
@@ -105,7 +107,7 @@ function disc_profile(
         nh = nose_height, ns = nose_sharpness, ws = wing_shape,
         land = bottom_land, bd = bead, ba = bead_angle, pt = plate_thickness,
         draft = inner_wall_draft, fil = wall_fillet, filh_in = wall_fillet_height,
-        ft = flat_top, n = curve_steps) =
+        ft = flat_top, fc = flat_top_chamfer, n = curve_steps) =
     let (
         R        = D / 2,
         r_in     = R - RW,                     // inner rim wall radius (at top of wall)
@@ -191,7 +193,18 @@ function disc_profile(
     )
     concat(
         bezpts(T, t1, t2, S, n),               // plate top (dome)
-        bezpts_tail(S, sh1, sh2, N, n),        // shoulder down to nose
+        // Flat-top chamfer: the shoulder curve leaves the flat plane
+        // horizontally, which is unprintable top-down (90 deg overhang at
+        // the plate). Clamp it under a cone descending at fc degrees from
+        // the plate edge; the cone rejoins the original curve where it is
+        // naturally steeper (the curve's slope only increases, so past the
+        // crossing everything is steeper than fc). Floored at the parting
+        // line so the widest point is never cut; rims too wide/low for the
+        // cone to cross in time keep a flat ring there - the designer
+        // warns when that happens.
+        ft ? [for (p = bezpts_tail(S, sh1, sh2, N, n))
+                 [p[0], min(p[1], max(H - (p[0] - r_in) * tan(fc), z_nose))]]
+           : bezpts_tail(S, sh1, sh2, N, n),   // shoulder down to nose
         bezpts_tail(N, w1, w2, B1, n),         // wing underside
         bead_pts,                              // land inner edge / bead lobe
         [W],                                   // inner rim wall
